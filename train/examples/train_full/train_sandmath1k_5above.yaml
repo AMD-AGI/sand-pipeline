@@ -1,0 +1,38 @@
+### model
+model_name_or_path: /shared-aig/machaita/models/Qwen/Qwen2.5-32B-Instruct
+trust_remote_code: True
+### method
+stage: sft
+do_train: true
+finetuning_type: full
+deepspeed: examples/deepspeed/ds_z3_config.json
+flash_attn: fa2
+
+### dataset
+dataset: limo,sand_math_500,sandmath1k_5above
+cutoff_len: 32768
+overwrite_cache: true
+preprocessing_num_workers: 64
+template: qwen
+
+### output
+output_dir: /mnt/m2m_nobackup/machaita2/saves/limo_sandmath1500_5above/Qwen2.5-32B-Instruct
+logging_steps: 1
+save_strategy: epoch
+# save_steps: 0.5
+plot_loss: true
+overwrite_output_dir: true
+
+##logging
+report_to: wandb
+run_name: limo_sandmath1500_5above
+
+### train
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 1
+learning_rate: 5.0e-6
+num_train_epochs: 10
+lr_scheduler_type: cosine
+warmup_ratio: 0.0
+bf16: true
+ddp_timeout: 180000000

@@ -1,0 +1,473 @@
+import requests
+import ast
+import re
+import threading
+import queue
+import time
+import random
+import json 
+import openai
+import time
+import os
+import concurrent.futures  
+import random
+import requests
+from tqdm import tqdm
+import argparse
+import logging
+from openai import OpenAI
+from transformers import AutoTokenizer
+from scripts import utills as u
+ 
+
+## ------ Global Configuration ------
+MODEL_PATH = "openai/gpt-oss-120b"
+aime_branches = ["elementary algebra", "geometry", "trigonometry", "number theory", "probability", "combinatorics"]
+MAX_QUESTIONS = 5000
+BATCH_SIZE = 500
+MAX_CONCURRENCY=128
+N = 2
+OUTPUT_DIR = ""
+MODEL = ""
+otuput_file = "data/generated_qa_pduks-slu00001C.jsonl"
+tmp_q_output_file = None
+log_file = None
+
+
+
+## ----------------------------------
+
+## ------ Util functions ------
+tokenizer = AutoTokenizer.from_pretrained("openai/gpt-oss-120b")
+
+def getLLMResponse(prompt, temp=1.0, max_new_tokens=42_000):
+    """
+    code to invoke the deepseek r1 for answer1 ## 131_072  """    
+    
+    client = OpenAI(base_url=f"http://localhost:8080/v1", api_key="None", timeout=24 * 60 * 60)
+
+    response = client.responses.create(
+        model="openai/gpt-oss-120b",
+        input=[
+            {"role": "system", "content": "You are a helpful assistant. Respond to the following request without utilizing any tool calls."},
+            {"role": "user", "content": prompt},
+        ],
+        reasoning = {"effort": "high"},
+        temperature=1,
+        max_output_tokens = max_new_tokens,
+        tool_choice='none'
+    )
+    
+    reasoning_responses = []
+    for output in response.output:
+        if hasattr(output, "text"):
+            reasoning_responses.append(output.text)
+
+    final_response = "\n\n".join(reasoning_responses)
+    final_response = final_response + "\n</think>\n" + response.output_text
+    completion_tokens = len(tokenizer(final_response)["input_ids"])
+
+    return final_response, response.usage.total_tokens, completion_tokens #response.usage.completion_tokens
+
+def flush_cache(port=8080):
+     requests.post(f"http://localhost:{port}/flush_cache")
+
+def extract_question_answer_pair(text):
+    # Find all question contents (non-greedy match, dot matches newline)
+    # re.findall returns a list of all captured group matches
+    if len(text.split("</think>"))>1:
+        text = text.split("</think>")[-1].strip()
+
+    all_questions = re.findall(r"<Q>(.*?)</Q>", text, re.DOTALL)
+    last_question = None
+    if all_questions:
+        # Get the last item from the list and strip whitespace
+        last_question = all_questions[-1].strip()
+
+    # Find all solution/answer contents (non-greedy match, dot matches newline)
+    all_answers = re.findall(r"<S>(.*?)</S>", text, re.DOTALL)
+    last_answer = None
+    if all_answers:
+        # Get the last item from the list and strip whitespace
+        last_answer = all_answers[-1].strip()
+
+    # Return the last found question and answer (either or both could be None)
+    return (last_question, last_answer)
+## ----------------------------------
+
+## ------ Data Loaders ------
+
+class Questions:
+    def __init__(self, aime_branches, batch_size, end):
+        # self.tokenizer = tokenizer
+        self.aime_branches = aime_branches
+        self.batch_size = batch_size
+        self.end = end
+
+    def _pack_message(self, role, content):
+        return [{"role": role, "content": content}]
+        
+    
+    def __iter__(self):
+        self.idx = 0 
+        return self
+
+    def __next__(self):
+
+        if self.idx >= self.end:
+            raise StopIteration
+
+        batch_size = min(self.batch_size, self.end - self.idx)
+        
+        
+
+        question_generation_prompt_1 = """You are an expert creator of challenging mathematics competition problems, specifically in the style of the American Invitational Mathematics Examination (AIME), focusing on the higher difficulty range (typically problems 11-15).
+
+        Your task is to generate ONE original mathematics problem with solution primarily focused on {} but ideally incorporating elements from another field to increase complexity and require insightful synthesis.
+
+        The problem must strictly adhere to the following criteria:
+
+        1.  **AIME Style & Difficulty:** Comparable to AIME problems of higher difficulty range (typically problems 11-15). Requires non-obvious insights or clever techniques. Avoids standard textbook exercises.
+        2.  **Focus Area:** Primarily based on {}, but integrate concepts creatively (e.g., number theory constraints in geometry, combinatorial arguments in algebra).
+        3.  **Solution Requirements:** Must have a unique integer answer between 000 and 999, inclusive. Solvable with pre-calculus math, but challenging to find the correct approach.
+        4.  **Originality:** Must be an original creation.
+        5.  **Clarity:** Problem statement must be precise and unambiguous.
+
+        **Output:**
+        Represent the question with <Q> and </Q>, solution with <S> and </S>. Solution should be step by step and final answer should be within \\boxed{{}}
+
+        Generate the problem now, focusing on {} with clever integration."""
+
+        question_generation_prompt_2 = """You are an expert creator of challenging mathematics competition problems, specifically in the style of national or international mathematical Olympiads, but adapted to have a single, unique, non-negative integer answer.
+
+        Your task is to generate ONE original mathematics problem with solution primarily focused on {} but ideally incorporating elements from another field to increase complexity and require insightful synthesis.
+
+        The problem must strictly adhere to the following criteria:
+
+        1.  **Style & Difficulty:** Comparable to style of national or international mathematical Olympiads. Requires non-obvious insights or clever techniques. Avoids standard textbook exercises.
+        2.  **Focus Area:** Primarily based on {}, but integrate concepts creatively (e.g., number theory constraints in geometry, combinatorial arguments in algebra).
+        3.  **Solution Requirements:** Must have a unique integer answer between 000 and 999, inclusive. Solvable with pre-calculus math, but challenging to find the correct approach.
+        4.  **Originality:** Must be an original creation.
+        5.  **Clarity:** Problem statement must be precise and unambiguous.
+
+        **Output:**
+        Represent the question with <Q> and </Q>, solution with <S> and </S>. Solution should be step by step and final answer should be within \\boxed{{}}
+
+        Generate the problem now, focusing on {} with clever integration."""
+
+        # AIME hard (#11–15) or IMO level
+        # non-negative integer as the
+
+        question_generation_prompt_3 = """Generate a novel math problem with a difficulty level at par with International Olympiads.         
+        - Problem must have a single numerical answer.
+        - The problem should be primarily focus on {} and incorporate a clever mix of elements from {}.
+        - Also return a solution for verification.
+
+        Your response should be formatted as follows:
+        - Final problem statement must be enclosed with <Q> and </Q>
+        - Reference solution should be enclosed with <S> and </S>."""
+
+        ## This is for AIME easy level problems.
+        question_generation_prompt_4 = """Generate a novel math problem with a difficulty level at par with national-level high school mathematics competition such as AIME.         
+        - Problem must have a single numerical answer.
+        - The problem should be primarily focus on {} and incorporate a clever mix of elements from {}.
+        - Also return a solution for verification.
+
+        Your response should be formatted as follows:
+        - Final problem statement must be enclosed with <Q> and </Q>
+        - Reference solution should be enclosed with <S> and </S>."""
+
+
+        l=0
+        b=0
+        data = []
+
+        random.shuffle(self.aime_branches)
+        while b < batch_size:                
+            primary_branch = self.aime_branches[l]
+            other_branches = self.aime_branches[:l] + self.aime_branches[l+1:]
+            other_branch = random.choice(other_branches)
+            prompt = question_generation_prompt_4.format(primary_branch, other_branch) #, primery_branch, primery_branch)
+            # message_list = self._pack_message("user", prompt)
+
+            record = {
+                'branch': primary_branch,
+                'prompt': prompt #text
+            }
+            data.append(record)
+            l += 1
+            b += 1
+
+            if l >= len(self.aime_branches):
+                l = 0
+
+        self.idx += batch_size
+        return data
+
+
+
+class Solutions:
+    def __init__(self, questions, n):
+        # self.tokenizer = tokenizer
+        self.questions = questions
+        self.end = len(self.questions)
+        self.n = n
+    
+    def __iter__(self):
+        self.idx = 0 
+        
+        return self
+
+    def __next__(self):
+
+        if self.idx >= self.end:
+            raise StopIteration
+
+        
+        data = []
+
+        solution_generation_prompt = """question: {}
+        Please reason step by step, and put your final answer within \\boxed{{}}."""       
+
+        for question in self.questions:            
+            for _ in range(self.n):
+                prompt = solution_generation_prompt.format(question)
+                # messages = [{"role": "user", "content": prompt}]
+                # text = self.tokenizer.apply_chat_template(
+                #     messages,
+                #     tokenize=False,
+                #     add_generation_prompt=True
+                # )
+                record = {
+                    # 'id': question['id'],
+                    'prompt': prompt #text
+                }
+                data.append(record)
+
+
+        self.idx += len(self.questions)
+        return data
+
+## 
+def send_single_request(prompt:str, request_id: int, temp: float, max_tokens:int):
+    
+    response, total_tokens, completion_tokens = getLLMResponse(prompt, temp=temp, max_new_tokens=max_tokens)
+    return request_id, response, total_tokens, completion_tokens
+
+def run_concurrent_requests_threaded(prompts, max_workers, temp, max_tokens):  
+    """Creates and runs all API request tasks concurrently using threads."""     
+  
+    results = {}    
+    futures_list = []
+    total_completion_tokens = []
+    
+    
+    start_time = time.time()
+    # max_workers controls the number of threads in the pool
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Submit all tasks to the executor
+        for i, prompt in enumerate(prompts):
+            # Pass request_id for easier tracking
+            future = executor.submit(send_single_request, prompt, i + 1, temp, max_tokens)
+            futures_list.append(future)
+
+        # Process results as they complete
+        for future in concurrent.futures.as_completed(futures_list):
+            try:
+                # result() will raise an exception if the worker function raised one
+                req_id, result_data, total_tokens, completion_tokens = future.result()
+                results[req_id] = {'result_data':result_data, 'completion_tokens':completion_tokens}
+                total_completion_tokens.append(completion_tokens)
+                          
+            except Exception as e:
+                # This catches exceptions *not* caught inside send_llm_request
+                # (though good practice is to catch them within the function)
+                print(f"Error retrieving result from future: {e}")                
+                # Find which prompt this was associated with (if needed, more complex)
+    end_time = time.time()
+    total_duration = end_time - start_time
+
+
+    ## Printing throughput results
+    print(f"Throughput Results:\n")
+    print(f"Total tokens generated accross all the requests: {sum(total_completion_tokens)}")
+    print(f"Average tokens generated accross all the requests: {sum(total_completion_tokens)/len(total_completion_tokens)}")
+    print(f"Total duration: {total_duration}")
+    print(f"Throughput: {round(sum(total_completion_tokens)/total_duration, 2)}")
+    logging.info(f"Throughput: {round(sum(total_completion_tokens)/total_duration, 2)}")
+    logging.info(f"Average tokens generated accross all the requests: {sum(total_completion_tokens)/len(total_completion_tokens)}")
+    
+
+    return results
+
+
+
+def qaGeneration():
+    # flush_cache() ## This is optional
+    questions = Questions(aime_branches, BATCH_SIZE, MAX_QUESTIONS) ## dataset preparation in iterator style
+    total_data_count = 0
+
+    for s, data in enumerate(questions):
+        ## do concurrent calls
+        start_time = time.time()
+        prompts = [record["prompt"] for record in data]
+        branches = [record["branch"] for record in data]
+        logging.info(f"**[Step{s+1}]**")
+        logging.info(f"[QGEN] Generatign {len(prompts)} questions")
+        print(f"[QGEN] Generatign {len(prompts)} questions")
+        q_start_time = time.time()
+        results = run_concurrent_requests_threaded(prompts, MAX_CONCURRENCY, temp=1.0, max_tokens=52000) ## concurrent questions generation with deepseek
+        q_end_time = time.time()
+        q_duration = q_end_time - q_start_time
+        print(f"[QGEN] Question generaiton duration: {q_duration} (seconds)")
+        qresults = processQuestionResults(prompts, branches, results)
+        questions = [record['question'] for record in qresults]
+        
+        solutions_prompts = Solutions(questions, n=N)
+        logging.info(f"[Valid questions] {len(questions)}")
+        
+        for prompts in solutions_prompts:
+            logging.info(f"[AGEN] Generatign {len(prompts)} Answers")
+            print(f"[AGEN] Generatign {len(prompts)} Answers")
+            prompts = [record["prompt"] for record in prompts]
+            # print(f"First prompt in AGEN prompts: {prompts[0]}")
+            results = run_concurrent_requests_threaded(prompts, MAX_CONCURRENCY, temp=0.6, max_tokens=42000) ## concurrent solutions generation with deepseek 
+            resutls = processSolutionResults(qresults, results, N, prompts)
+            saveToFile(resutls)
+
+        this_loop_data_count = len(resutls)
+        total_data_count += this_loop_data_count
+        ## time duration
+        end_time = time.time()
+        total_duration = end_time - start_time
+
+        logging.info(f"[Question Generated in Current Loop] {this_loop_data_count}")
+        logging.info(f"[Question Generated in total so far] {total_data_count}")
+        logging.info(f"[Duration] {total_duration}")
+        print(f"Total programme duration: {total_duration}")
+
+
+def processQuestionResults(prompts, branches, results):
+    results_to_send = []
+    with open(tmp_q_output_file, 'w') as f:
+        for i, prompt in enumerate(prompts):
+            generated_text = results[i+1]["result_data"]
+            completion_tokens = results[i+1]["completion_tokens"]
+            question, solution = extract_question_answer_pair(generated_text)
+            branch = branches[i]
+            record = {
+                'id': i+1,
+                'prompt': prompt,
+                'branch': branch,
+                'question': question,
+                'solution': solution,
+                # 'generated_text': generated_text,
+                'completion_tokens': completion_tokens
+            }
+            if question is not None:
+                results_to_send.append(record)
+            json_string = json.dumps(record)
+            f.write(json_string + "\n")
+    return results_to_send
+
+def processSolutionResults(qresults, results, N, prompts):
+    
+    for i in range(len(qresults)):        
+        for n in range(N):
+            sol_index = int(i*N + n)
+            qresults[i][f"solution_{n+1}"] = results.get(sol_index+1, {"result_data":''})["result_data"]
+            qresults[i][f"completion_tokens_solution_{n+1}"] = results.get(sol_index+1, {"completion_tokens":0})["completion_tokens"]
+            if i==0:
+                qresults[i]["prompt_solution"] = prompts[i]
+
+
+    return qresults
+
+def saveToFile(resutls):
+    with open(otuput_file, "a") as f:
+        for record in resutls:
+            json_string = json.dumps(record)
+            f.write(json_string + "\n")
+
+
+
+def setVariables(args):
+    global MAX_QUESTIONS, BATCH_SIZE, MAX_CONCURRENCY, N, otuput_file, tmp_q_output_file
+
+    # Get the absolute path to the directory containing the current script
+    SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+    OUTPUT_DIR = args.output_dir
+
+    # MODEL = args.model
+    MAX_QUESTIONS = args.max_questions
+    BATCH_SIZE = args.batch_size
+    MAX_CONCURRENCY = args.max_concurrency
+    N = args.n
+    otuput_file = os.path.join(SCRIPT_DIR, OUTPUT_DIR, f'generated_qa_{args.server_name}.jsonl')
+    tmp_q_output_file = os.path.join(SCRIPT_DIR, OUTPUT_DIR, f'temp_qa_{args.server_name}.jsonl')
+    log_file = os.path.join(SCRIPT_DIR, 'logs', f'log_qageneration_{args.server_name}.log')
+    
+    ## Logging setup
+    logging.basicConfig(  
+        filename=log_file,           # Log file name  
+        filemode='w',                      # Append to log file; use 'w' to overwrite on each run  
+        format='%(asctime)s - %(levelname)s - %(message)s',  # Log format with timestamp, level, and message  
+        level=logging.INFO                 # Minimum log level to capture  
+    ) 
+
+    logging.info("Script started.")
+    logging.info(f"Input arguments: MAX_QUESTIONS - {MAX_QUESTIONS}")
+
+    ## settign http endpoint messages to different logging level
+    # noisy_library_logger_name = 'requests' # Example for httpx
+    # try:
+    #     logging.getLogger(noisy_library_logger_name).setLevel(logging.WARNING)
+    #     # You might need to target sub-loggers too, e.g., for requests:
+    #     # logging.getLogger("requests.packages.urllib3").setLevel(logging.WARNING)
+    # except Exception as e:
+    #     logging.warning(f"Could not find or set level for logger '{noisy_library_logger_name}': {e}")
+
+    ## Ouput file 
+
+    if args.overwrite == "yes":
+        with open(otuput_file, "w") as f:
+            pass
+
+
+def getArguments():
+    
+
+    parser = argparse.ArgumentParser()
+    # parser.add_argument("--model", type=str, help="Number of maximum questions to be generated in this run")
+    parser.add_argument("--max_questions", type=int, default=30000, help="Number of maximum questions to be generated in this run")
+    parser.add_argument("--batch_size", type=int, default=4096, help="Batch size to be processed in the each iteration")
+    parser.add_argument("--max_concurrency", type=int, default=1024, help="Number of concurrent requests sent to the model endpoint form the batch of prompts")
+    parser.add_argument("--n", type=int, default=1, help="number of answers to be generated for each question")
+    parser.add_argument("--server_name", default="31aug2025", help="server name appended for logs")
+    parser.add_argument("--output_dir", default="data/multimodal", help="output data directory to save")
+    parser.add_argument("--overwrite", type=str, default="yes", help="overwrite output file if exists")
+    args = parser.parse_args()
+
+    return args
+
+    
+
+
+
+
+def main():
+    args = getArguments()
+    setVariables(args) ## to set some global variables
+    qaGeneration()
+    
+
+if __name__ == "__main__":
+    main()
+
+
+## Exampel command
+# python pipeline.py --model "Qwen/QwQ-32B" --max_questions 120 --server_name "QwQ32B" --output_dir "data/multimodal"
+# python pipeline.py --model "LGAI-EXAONE/EXAONE-Deep-32B" --max_questions 120 --server_name "EXAONE-Deep-32B" --output_dir "data/multimodal"
+# python pipeline.py --model "meta-llama/Llama-3.1-405B" --max_questions 120 --server_name "Llama-3.1-405B" --output_dir "data/multimodal"
+# python pipeline.py --max_questions 8192 --server_name "000012" --output_dir "data/gptoss"
+# python pipeline.py --max_questions 500 --server_name "000012" --output_dir "data/gptoss"
