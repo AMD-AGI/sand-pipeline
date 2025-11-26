@@ -471,3 +471,4 @@ if __name__ == "__main__":
 # python pipeline.py --model "meta-llama/Llama-3.1-405B" --max_questions 120 --server_name "Llama-3.1-405B" --output_dir "data/multimodal"
 # python pipeline.py --max_questions 8192 --server_name "000012" --output_dir "data/gptoss"
 # python pipeline.py --max_questions 500 --server_name "000012" --output_dir "data/gptoss"
+# python datageneration.py --server_name "math" --port 8087 --output_dir "data" --max_concurrency 256 --batch_size 512 --max_questions 4096

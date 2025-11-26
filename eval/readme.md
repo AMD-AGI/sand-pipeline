@@ -1,3 +1,6 @@
+> **Acknowledgement:** The evaluation code in this directory is adapted from the [GAIR-NLP/LIMO](https://github.com/GAIR-NLP/LIMO) repository. We thank the authors for their contributions.
+
+---
 # Math Problem Evaluation Framework
 
 This repository contains scripts for evaluating Large Language Models (LLMs) on mathematical reasoning tasks. The evaluation framework includes both inference (using the VLLM framework) and evaluation (using both rule-based and model-based approaches) components.
