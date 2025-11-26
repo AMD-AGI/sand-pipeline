@@ -1,6 +1,3 @@
-# reasoning-sota-pipeline
-Synthetic data generation pipeline, finetuning and evaluation scripts.
-
 # 🚀 SOTA Reasoning on a Weekend: Scalable Synthetic Data Pipeline
 
 <div align="center">
