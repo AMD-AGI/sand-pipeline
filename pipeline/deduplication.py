@@ -4,16 +4,12 @@ import yaml
 from semhash import SemHash
 from model2vec import StaticModel
 
-## config file
-with open("configs/pipeline_config_may25.yaml", 'r') as f:
-    config = yaml.safe_load(f)    
-
 ##
-run_name_value = config["run_name"]
-input_file = config["answer_extraction"]["output_file"].format(run_name=run_name_value)
-output_file = config["deduplication"]["output_file"].format(run_name=run_name_value)
-report_file = config["deduplication"]["report"].format(run_name=run_name_value)
-threshold_value = config["deduplication"]["threshold"]
+input_file = "data/consistent_dc_math.jsonl"
+output_file = "data/consistent_dc_dd_math.json"
+report_file = "data/report_math_dd.jsonl"
+threshold_value = 0.99
+question_fields = ["question", "problem", "instruction"]
 
 # Load a dataset to deduplicate
 texts = []
@@ -26,7 +22,16 @@ with open(input_file, "r") as f:
 # model = StaticModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
 
 # Initialize a SemHash instance
-semhash = SemHash.from_records(records=texts, columns=["problem"])
+question_field = None
+if texts:
+    for field in question_fields:
+        if field in texts[0]:
+            question_field = field
+            break
+if question_field:
+    semhash = SemHash.from_records(records=texts, columns=[question_field])
+else:
+    raise ValueError("Question field not found in the data")
 
 # Deduplicate the texts
 deduplicated_texts = semhash.self_deduplicate(threshold=threshold_value).selected
@@ -48,4 +53,5 @@ report_dict = {
 with open(report_file, 'w') as f:
     json.dump(report_dict, f, indent=4)
 
+print(f"Deduplicated data written to {output_file}")
 print(f"report is written to {report_file}")

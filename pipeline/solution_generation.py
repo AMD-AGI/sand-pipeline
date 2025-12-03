@@ -1,3 +1,11 @@
+"""
+Solution Generation Pipeline for Math Problems
+
+Usage:
+    python solution_generation.py --input_file "data/input.jsonl" --output_file "data/output.jsonl" \
+        --temp_file "data/temp.jsonl" --model_name "openai/gpt-oss-120b" --port 8080 \
+        --batch_size 4096 --max_workers 1024
+"""
 import json
 import yaml
 import argparse
@@ -24,19 +32,23 @@ from transformers import AutoTokenizer
 from operator import itemgetter
 
 
-
-## Some helper functions
-
-tokenizer = AutoTokenizer.from_pretrained("openai/gpt-oss-120b")
+## ------ Global Configuration ------
+MODEL_NAME = "openai/gpt-oss-120b"
+PORT = 8080
+BATCH_SIZE = 4096
+MAX_WORKERS = 1024
+K = 1  # Number of solutions to generate per question
+tokenizer = None
+## ----------------------------------
 
 def getLLMResponse(prompt, temp=1.0, max_new_tokens=52_000):
     """
     code to invoke the deepseek r1 for answer1 ## 131_072  """    
     
-    client = OpenAI(base_url=f"http://localhost:8080/v1", api_key="None", timeout=24 * 60 * 60)
+    client = OpenAI(base_url=f"http://localhost:{PORT}/v1", api_key="None", timeout=24 * 60 * 60)
 
     response = client.responses.create(
-        model="openai/gpt-oss-120b",
+        model=MODEL_NAME,
         input=[
             {"role": "system", "content": "You are a helpful assistant. Respond to the following request without utilizing any tool calls."},
             {"role": "user", "content": prompt},
@@ -59,29 +71,17 @@ def getLLMResponse(prompt, temp=1.0, max_new_tokens=52_000):
     return final_response, response.usage.total_tokens, completion_tokens #response.usage.completion_tokens
 
 
-class DiffRating:
+class SolutionGeneration:
     def __init__(self):
-        pass
+        self.final_dataset = []
 
     def prepareData(self, opts):
 
-        self.final_dataset = []
-
-        print(f"\n\n==> Processing AMD/SAND-Math \n\n")
-
-        with open(opts.sandmath_path, 'r') as f:
+        with open(opts.input_file, 'r') as f:
             for line in f:
                 record = json.loads(line.strip())
-                if record["solution"] is None:
-                    self.final_dataset.append(record)
-
-        ## Orderign in the descending order of diffrating and takign the 4k quesitons
-        # self.final_dataset = sorted(self.final_dataset, key=itemgetter('diff_rating'), reverse=True)
-        # self.final_dataset = self.final_dataset[:4000]
-
-        
-        # self.final_dataset = self.final_dataset[:2]
-        print(f"Total data found: {len(self.final_dataset)}")
+                self.final_dataset.append(record)
+        print(f"Total questions to generate solutions for: {len(self.final_dataset)}")
         
 
           
@@ -95,13 +95,12 @@ class DiffRating:
 
         Please reason step by step, and put your final answer within \\boxed{{}}.
         """       
-        K = 1
 
         prompts = []
 
         for row in data:
             for _ in range(K):
-                prompt = solutiongeneration_prompt.format(row["question"])
+                prompt = solutiongeneration_prompt.format(row["new_question"])
                 prompts.append(prompt)
 
         return prompts
@@ -110,17 +109,14 @@ class DiffRating:
         response, total_tokens, completion_tokens = getLLMResponse(prompt)
         return request_id, response, total_tokens, completion_tokens
 
-    def rateDifficulty(self, opts):
-        batch_size = 4096
-        max_workers = 1024
-        # temp_file = "data/may1625/temp_diffrating.jsonl"
+    def generateSolutions(self, opts):
 
         ## Initialize the temp file
         with open(opts.temp_file, "w") as f:
             pass
 
-        # print(f"Starting the difficulty hiking loop loop")
-        pbar = tqdm(total=len(self.final_dataset) // batch_size+1, desc="Steps")
+        print(f"Starting the solution generation loop")
+        pbar = tqdm(total=len(self.final_dataset) // BATCH_SIZE+1, desc="Steps")
         idx = 0
         while idx < len(self.final_dataset):
             results = {}    
@@ -128,15 +124,15 @@ class DiffRating:
             total_completion_tokens = []
 
 
-            end = min(idx+batch_size, len(self.final_dataset))
+            end = min(idx+BATCH_SIZE, len(self.final_dataset))
             chunk = self.final_dataset[idx:end]
             prompts = self.__processPrompts(chunk)
 
             start_time = time.time()
-            with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
                 # Submit all tasks to the executor
                 for i, prompt in enumerate(prompts):
-                    # Pass request_id for easier tracking
+                    # Pass i as request_id for easier tracking
                     future = executor.submit(self.__sendSingleRequest, prompt, i)
                     futures_list.append(future)
 
@@ -159,20 +155,17 @@ class DiffRating:
             print(f"Throughput: {round(sum(total_completion_tokens)/total_duration, 2)}")   
 
             ## store the results to temp folder
-            k = 1 ## if we generatign 2 samples per question for consustency
             with open(opts.temp_file, "a") as f:
                 for i in range(len(chunk)):
-                    
-                    solution_1 = results[i*k]['response']
-                    # solution_2 = results[i*k+1]['response']
-                    
-                    chunk[i]["solution_1"] = solution_1
-                    # chunk[i]["solution_2"] = solution_2
-                    
+                    for k in range(K):
+                        sol_index = int(i*K + k)      
+                        solution_1 = results.get(sol_index, {"response":''})['response']
+                        chunk[i][f"new_solution_{k+1}"] = solution_1
+
                     json_string = json.dumps(chunk[i])
                     f.write(json_string + "\n")
 
-            idx += batch_size
+            idx += BATCH_SIZE
             pbar.update(1)
 
     def saveResults(self, opts):
@@ -183,104 +176,54 @@ class DiffRating:
             for line in f:
                 record = json.loads(line.strip())
                 temp_data.append(record)
-        
-        # mode = 'a' if os.path.exists(opts.output_file) and opts.start_again.lower() == "no" else 'w'
-        # print(f"Mode: {mode}")
+
         with open(opts.output_file, 'w') as f:
-            for record in temp_data:
+            for record in temp_data:                
                 json_string = json.dumps(record)
                 f.write(json_string + "\n")
         print(f"Data saved..")
         print(f"!! -- Done -- !!")
         return
-        # ===========================
-
-        df.to_json("data/jun1625/diffhiked_by_deepseek.jsonl", orient="records", lines=True)    
-        
-        # print(f"\n\n Columns in the temp file is : {df.columns} \n\n")
-        df_agg = df.groupby(["id", "problem", "answer", "solution"], as_index=False).agg({"diff_rating":"mean", "k":"count", "acc":"max"})
-
-        df.to_json("data/may1625/difffiltered_diffrated.jsonl", orient="records", lines=True) 
-        df_agg.to_json("data/may1625/difffiltered_diffrated_agg.jsonl", orient="records", lines=True) 
-
-        # Optional: set a style  
-        sns.set(style="whitegrid")  
-        
-        # Create a new figure  
-        plt.figure(figsize=(6, 8))  
-        
-        # Plot a vertical box plot of the 'diff_rating' column  
-        sns.boxplot(y=df_agg["diff_rating"], color="skyblue")  
-        
-        # Add labels and title  
-        plt.ylabel("Difference in Rating")  
-        plt.title("Box Plot of diff_rating")  
-        
-        # Save the plot to disk  
-        output_path = "data/may1625/figures/deepseek_diffratings.png"  
-        plt.savefig(output_path, dpi=300, bbox_inches="tight")  
-        
-        # (Optional) Show the plot in an interactive session  
-        # plt.show()  
-        
-        # Close the figure to free memory  
-        plt.close()  
-        
-        print(f"Box plot saved to {output_path}") 
-
-        return 
-
-        # --- 2. Define custom colors for each seed ---  
-        seed_palette = {  
-            11: "#e31a1c",  # red  
-            12: "#1f78b4",  # blue  
-            41: "#33a02c"   # green  
-        }  
-        
-        # --- 3. Plot violin plot with seed as hue ---  
-        plt.figure(figsize=(12, 12))  
-        ax = sns.violinplot(  
-            data=df,  
-            x="dataset",        # categorical x-axis (A, B, etc.)  
-            y="diff_rating",  
-            hue="seed",         # use seed for hue  
-            palette=seed_palette,  
-            split=False,        # set to True if you want split violins  
-            inner="quartile"  
-        )  
-        
-        # --- 4. Rotate x-axis labels by 45° ---  
-        ax.set_xticklabels(ax.get_xticklabels(), rotation=45)  
-        
-        # --- 5. Labels, title, legend ---  
-        ax.set_xlabel("Dataset")  
-        ax.set_ylabel("diff_rating")  
-        ax.set_title("Distribution of diff_rating by Dataset and Seed")  
-        plt.legend(title="Seed", loc="upper right")  
-        plt.savefig("data/may1625/figures/deepseek_diffratings.png")
-        plt.savefig("data/may1625/figures/deepseek_diffratings.pdf")
         
 
 
         
 
 def main(opts):
-    dr = DiffRating()
-    dr.prepareData(opts)
-    dr.rateDifficulty(opts)
-    dr.saveResults(opts)
+    setVariables(opts)  ## to set global variables and initialize tokenizer
+    sg = SolutionGeneration()
+    sg.prepareData(opts)
+    sg.generateSolutions(opts)
+    sg.saveResults(opts)
 
 
 def getArguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=False, help="All arguments required should be in the config yaml config file")
-    parser.add_argument("--sandmath_path", required=False, help="Path to input dataset")
+    parser.add_argument("--input_file", required=False, help="Path to input dataset")
     parser.add_argument("--temp_file", required=False, help="Path to temp file")
-    parser.add_argument("--model", required=False, help="Model path or model name")
-    parser.add_argument("--start_again", required=False, type=str, help="from where to start")
-    parser.add_argument("--output_file", required=False, help="from where to start")
+    parser.add_argument("--model_name", type=str, default="openai/gpt-oss-120b", help="Model to be used for generation")
+    parser.add_argument("--port", type=int, default=8080, help="Port to be used for the model endpoint")
+    parser.add_argument("--batch_size", type=int, default=4096, help="Batch size to be processed in each iteration")
+    parser.add_argument("--max_workers", type=int, default=1024, help="Number of concurrent requests sent to the model endpoint")
+    parser.add_argument("--k", type=int, default=1, help="Number of solutions to generate per question")
+    parser.add_argument("--output_file", required=False, help="file to save")
     
     return parser.parse_args()
+
+
+def setVariables(args):
+    global MODEL_NAME, PORT, BATCH_SIZE, MAX_WORKERS, K, tokenizer
+
+    MODEL_NAME = args.model_name
+    PORT = args.port
+    BATCH_SIZE = args.batch_size
+    MAX_WORKERS = args.max_workers
+    K = args.k
+
+    ## Initialize the tokenizer for computing the completion tokens
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+    print(f"Tokenizer initialized for model: {MODEL_NAME}")
 
 
 if __name__ == "__main__":

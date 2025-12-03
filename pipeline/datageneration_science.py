@@ -1,8 +1,8 @@
 """
-Synthetic Data Generation Pipeline for Math Competition Problems
+Synthetic Data Generation Pipeline for Science Problems
 
 Usage:
-    python datageneration.py --run_name "math" --output_dir "data" \
+    python datageneration_science.py --run_name "science" --output_dir "data" \
         --max_concurrency 1024 --batch_size 4096 --max_questions 30000 \
         --model_name "openai/gpt-oss-120b" --port 8080
 """
@@ -11,28 +11,26 @@ import concurrent.futures
 import json
 import logging
 import os
-import random
 import re
 import time
 from openai import OpenAI
 from transformers import AutoTokenizer
-import utills as u
+import pandas as pd
  
 
 ## ------ Global Configuration ------
 MODEL_NAME = "openai/gpt-oss-120b"
-PORT = 8080
-aime_branches = ["algebra", "geometry", "trigonometry", "number theory", "probability", "combinatorics"]
+metadata_file = "configs/science_metadata.jsonl"
 MAX_QUESTIONS = 5000
 BATCH_SIZE = 500
-MAX_CONCURRENCY = 128
+MAX_CONCURRENCY=128
 N = 2
 OUTPUT_DIR = ""
 output_file = None
 tmp_q_output_file = None
 log_file = None
+PORT = 8080
 tokenizer = None
-
 
 
 
@@ -40,8 +38,9 @@ tokenizer = None
 
 ## ------ Util functions ------
 
-
 def getLLMResponse(prompt, temp=1.0, max_new_tokens=42_000):
+    """
+    code to invoke the deepseek r1 for answer1 ## 131_072  """    
     
     client = OpenAI(base_url=f"http://localhost:{PORT}/v1", api_key="None", timeout=24 * 60 * 60)
 
@@ -67,8 +66,6 @@ def getLLMResponse(prompt, temp=1.0, max_new_tokens=42_000):
     completion_tokens = len(tokenizer(final_response)["input_ids"])
 
     return final_response, response.usage.total_tokens, completion_tokens #response.usage.completion_tokens
-
-
 
 def extract_question_answer_pair(text):
     # Find all question contents (non-greedy match, dot matches newline)
@@ -96,15 +93,18 @@ def extract_question_answer_pair(text):
 ## ------ Data Loaders ------
 
 class Questions:
-    def __init__(self, aime_branches, batch_size, end):
-        self.aime_branches = aime_branches
+    def __init__(self, batch_size, end):
         self.batch_size = batch_size
         self.end = end
+        self.science_metadata = None
+        self.__build_metadata()
 
-    def _pack_message(self, role, content):
-        return [{"role": role, "content": content}]
-        
-    
+    def __build_metadata(self):
+        science_metadata_df = pd.read_json(metadata_file, lines=True)
+        science_metadata_df["weight"] = round(science_metadata_df["raw_weight"] / science_metadata_df["raw_weight"].sum() * 100)
+
+        self.science_metadata = science_metadata_df
+
     def __iter__(self):
         self.idx = 0 
         return self
@@ -114,88 +114,38 @@ class Questions:
         if self.idx >= self.end:
             raise StopIteration
 
-        batch_size = min(self.batch_size, self.end - self.idx)
-        
-        
+        batch_size = min(self.batch_size, self.end - self.idx)        
 
-        question_generation_prompt_1 = """You are an expert creator of challenging mathematics competition problems, specifically in the style of the American Invitational Mathematics Examination (AIME), focusing on the higher difficulty range (typically problems 11-15).
 
-        Your task is to generate ONE original mathematics problem with solution primarily focused on {} but ideally incorporating elements from another field to increase complexity and require insightful synthesis.
-
-        The problem must strictly adhere to the following criteria:
-
-        1.  **AIME Style & Difficulty:** Comparable to AIME problems of higher difficulty range (typically problems 11-15). Requires non-obvious insights or clever techniques. Avoids standard textbook exercises.
-        2.  **Focus Area:** Primarily based on {}, but integrate concepts creatively (e.g., number theory constraints in geometry, combinatorial arguments in algebra).
-        3.  **Solution Requirements:** Must have a unique integer answer between 000 and 999, inclusive. Solvable with pre-calculus math, but challenging to find the correct approach.
-        4.  **Originality:** Must be an original creation.
-        5.  **Clarity:** Problem statement must be precise and unambiguous.
-
-        **Output:**
-        Represent the question with <Q> and </Q>, solution with <S> and </S>. Solution should be step by step and final answer should be within \\boxed{{}}
-
-        Generate the problem now, focusing on {} with clever integration."""
-
-        question_generation_prompt_2 = """You are an expert creator of challenging mathematics competition problems, specifically in the style of national or international mathematical Olympiads, but adapted to have a single, unique, non-negative integer answer.
-
-        Your task is to generate ONE original mathematics problem with solution primarily focused on {} but ideally incorporating elements from another field to increase complexity and require insightful synthesis.
-
-        The problem must strictly adhere to the following criteria:
-
-        1.  **Style & Difficulty:** Comparable to style of national or international mathematical Olympiads. Requires non-obvious insights or clever techniques. Avoids standard textbook exercises.
-        2.  **Focus Area:** Primarily based on {}, but integrate concepts creatively (e.g., number theory constraints in geometry, combinatorial arguments in algebra).
-        3.  **Solution Requirements:** Must have a unique integer answer between 000 and 999, inclusive. Solvable with pre-calculus math, but challenging to find the correct approach.
-        4.  **Originality:** Must be an original creation.
-        5.  **Clarity:** Problem statement must be precise and unambiguous.
-
-        **Output:**
-        Represent the question with <Q> and </Q>, solution with <S> and </S>. Solution should be step by step and final answer should be within \\boxed{{}}
-
-        Generate the problem now, focusing on {} with clever integration."""
-
-        # AIME hard (#11–15) or IMO level
-        # non-negative integer as the
-
-        question_generation_prompt_3 = """Generate a novel math problem with a difficulty level at par with International Olympiads.         
-        - Problem must have a single numerical answer.
-        - The problem should be primarily focus on {} and incorporate a clever mix of elements from {}.
+        science_generation_prompt = """Generate a novel science question with a difficulty of a **PhD Qualifying Exam**. This means the question must require the **synthesis of multiple, distinct concepts** and cannot be answered by a simple factual recall.        
+        - The question should be primarily focus on `{}` and incorporate a clever mix of elements from `{}`.
+        - Question must be of type multiple choice question with 4 options (A, B, C, D) and only one correct answer.
+        - The correct answer's position must be randomized and not consistently A.        
         - Also return a solution for verification.
 
         Your response should be formatted as follows:
-        - Final problem statement must be enclosed with <Q> and </Q>
-        - Reference solution should be enclosed with <S> and </S>."""
-
-        ## This is for AIME easy level problems.
-        question_generation_prompt_4 = """Generate a novel math problem with a difficulty level at par with national-level high school mathematics competition such as AIME.         
-        - Problem must have a single numerical answer.
-        - The problem should be primarily focus on {} and incorporate a clever mix of elements from {}.
-        - Also return a solution for verification.
-
-        Your response should be formatted as follows:
-        - Final problem statement must be enclosed with <Q> and </Q>
+        - Final question statement along with options must be enclosed with <Q> and </Q>
         - Reference solution should be enclosed with <S> and </S>."""
 
 
-        l=0
+
+        
         b=0
         data = []
 
-        random.shuffle(self.aime_branches)
-        while b < batch_size:                
-            primary_branch = self.aime_branches[l]
-            other_branches = self.aime_branches[:l] + self.aime_branches[l+1:]
-            other_branch = random.choice(other_branches)
-            prompt = question_generation_prompt_4.format(primary_branch, other_branch)
+        while b < batch_size:
+            sample_record = self.science_metadata.sample(weights='weight', n=1).iloc[0]
+            primary_branch = sample_record['branch']             
+            other_branch = self.science_metadata[(self.science_metadata['branch'] != primary_branch) & (self.science_metadata['subject'] == sample_record['subject'])].sample(n=1).iloc[0]['branch']              
+
+            prompt = science_generation_prompt.format(primary_branch, other_branch)
 
             record = {
                 'branch': primary_branch,
                 'prompt': prompt
             }
-            data.append(record)
-            l += 1
+            data.append(record)            
             b += 1
-
-            if l >= len(self.aime_branches):
-                l = 0
 
         self.idx += batch_size
         return data
@@ -222,7 +172,7 @@ class Solutions:
         data = []
 
         solution_generation_prompt = """question: {}
-        Please reason step by step, and put your final answer within \\boxed{{}}."""       
+        Please reason step by step, and put your final answer option within \\boxed{{}}."""       
 
         for question in self.questions:            
             for _ in range(self.n):
@@ -236,8 +186,8 @@ class Solutions:
         self.idx += len(self.questions)
         return data
 
-
-def send_single_request(prompt: str, request_id: int, temp: float, max_tokens: int):
+## 
+def send_single_request(prompt:str, request_id: int, temp: float, max_tokens:int):
     
     response, total_tokens, completion_tokens = getLLMResponse(prompt, temp=temp, max_new_tokens=max_tokens)
     return request_id, response, total_tokens, completion_tokens
@@ -272,20 +222,18 @@ def run_concurrent_requests_threaded(prompts, max_workers, temp, max_tokens):
     end_time = time.time()
     total_duration = end_time - start_time
 
-
     ## Log throughput results
     logging.info(f"Total tokens generated across all requests: {sum(total_completion_tokens)}")
     logging.info(f"Average tokens generated across all requests: {sum(total_completion_tokens)/len(total_completion_tokens)}")
     logging.info(f"Total duration: {total_duration}")
     logging.info(f"Throughput: {round(sum(total_completion_tokens)/total_duration, 2)}")
-    
 
     return results
 
 
 
 def qaGeneration():
-    questions = Questions(aime_branches, BATCH_SIZE, MAX_QUESTIONS)
+    questions = Questions(BATCH_SIZE, MAX_QUESTIONS)
     total_data_count = 0
     start_time = time.time()
     for s, data in enumerate(questions):        
@@ -295,28 +243,29 @@ def qaGeneration():
         logging.info(f"**[Step{s+1}]**")
         logging.info(f"[QGEN] Generating {len(prompts)} questions")
         
-        results = run_concurrent_requests_threaded(prompts, MAX_CONCURRENCY, temp=0.9, max_tokens=52000)
+        results = run_concurrent_requests_threaded(prompts, MAX_CONCURRENCY, temp=0.7, max_tokens=42000)
         
         qresults = processQuestionResults(prompts, branches, results)
         questions = [record['question'] for record in qresults]
         
         solutions_prompts = Solutions(questions, n=N)
         
+        
         for prompts in solutions_prompts:
             logging.info(f"[AGEN] Generating {len(prompts)} answers")
             prompts = [record["prompt"] for record in prompts]
-            results = run_concurrent_requests_threaded(prompts, MAX_CONCURRENCY, temp=0.6, max_tokens=42000) 
+            results = run_concurrent_requests_threaded(prompts, MAX_CONCURRENCY, temp=0.6, max_tokens=32000)
             results = processSolutionResults(qresults, results, N, prompts)
             saveToFile(results)
 
         this_loop_data_count = len(results)
-        total_data_count += this_loop_data_count
+        total_data_count += this_loop_data_count       
         end_time = time.time()
         current_iteration_duration = end_time - current_iteration_start_time
-        logging.info(f"[Answer Generated in Current Loop] {this_loop_data_count}")
+        logging.info(f"[Question Generated in Current Loop] {this_loop_data_count}")
         logging.info(f"[Question Generated in total so far] {total_data_count}")
         logging.info(f"[Current Iteration Duration] {current_iteration_duration} seconds")
-
+    
     end_time = time.time()
     total_duration = end_time - start_time
     logging.info(f"[Total Generation Duration] {total_duration} seconds")
@@ -325,11 +274,11 @@ def processQuestionResults(prompts, branches, results):
     results_to_send = []
     with open(tmp_q_output_file, 'w') as f:
         for i, prompt in enumerate(prompts):
-            generated_text = results[i+1]["result_data"]
-            completion_tokens = results[i+1]["completion_tokens"]
+            generated_text = results.get(i+1, {"result_data":''})["result_data"]
+            completion_tokens = results.get(i+1, {"completion_tokens":0})["completion_tokens"]
             question, solution = extract_question_answer_pair(generated_text)
             branch = branches[i]
-            record = {
+            record = {                
                 'prompt': prompt,
                 'branch': branch,
                 'question': question,
@@ -343,7 +292,6 @@ def processQuestionResults(prompts, branches, results):
     return results_to_send
 
 def processSolutionResults(qresults, results, N, prompts):
-    
     for i in range(len(qresults)):        
         for n in range(N):
             sol_index = int(i*N + n)
@@ -370,7 +318,6 @@ def setVariables(args):
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
     OUTPUT_DIR = args.output_dir
 
-    
     MODEL_NAME = args.model_name
     PORT = args.port
     MAX_QUESTIONS = args.max_questions
@@ -389,10 +336,9 @@ def setVariables(args):
         level=logging.INFO                 # Minimum log level to capture  
     ) 
 
-    logging.info("Script started.")    
-    logging.info(f"Data will be written to: {output_file}")
+    logging.info("Script started.")
+    logging.info(f"Input arguments: MAX_QUESTIONS - {MAX_QUESTIONS}")
 
-    ## Output file 
     if args.overwrite == "yes":
         with open(output_file, "w") as f:
             pass
@@ -406,15 +352,17 @@ def getArguments():
     
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_name", type=str, help="model to be used for generation; e.g. openai/gpt-oss-120b")
-    parser.add_argument("--port", type=int, default=8080, help="Port to be used for the model endpoint; e.g. 8080")
+    
     parser.add_argument("--max_questions", type=int, default=30000, help="Number of maximum questions to be generated in this run")
     parser.add_argument("--batch_size", type=int, default=4096, help="Batch size to be processed in the each iteration")
     parser.add_argument("--max_concurrency", type=int, default=1024, help="Number of concurrent requests sent to the model endpoint form the batch of prompts")
     parser.add_argument("--n", type=int, default=1, help="number of answers to be generated for each question")
-    parser.add_argument("--run_name", default="mathdata", help="Identifier appended to output and log filenames")
-    parser.add_argument("--output_dir", default="data/multimodal", help="output data directory to save")
+    parser.add_argument("--run_name", default="science", help="Identifier appended to output and log filenames")
+    parser.add_argument("--model_name", type=str, default="openai/gpt-oss-120b", help="model to be used for generation")
+    parser.add_argument("--port", type=int, default=8080, help="port number for the server")
+    parser.add_argument("--output_dir", default="data", help="output data directory to save")
     parser.add_argument("--overwrite", type=str, default="yes", help="overwrite output file if exists")
+    
     args = parser.parse_args()
 
     return args
@@ -432,4 +380,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

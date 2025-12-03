@@ -1,4 +1,4 @@
-# 🚀 SOTA Reasoning on a Weekend: Scalable Synthetic Data Pipeline
+# 🚀 Scalable Synthetic Data Pipeline for SOTA Reasoning Model
 
 <div align="center">
 
@@ -137,10 +137,13 @@ vllm serve openai/gpt-oss-120b \
 ```
 
 **Step 2: Data Generation**
+
+for math:
 Once the server is up and listening on port 8087, run the generation script to create raw question-answer pairs:
 ```bash
-python scripts/datageneration.py \
-    --server_name "math" \
+python pipeline/datageneration.py \
+    --run_name "math" \
+    --model_name "openai/gpt-oss-120b" \
     --port 8087 \
     --output_dir "data" \
     --max_concurrency 256 \
@@ -148,39 +151,60 @@ python scripts/datageneration.py \
     --max_questions 4096
 ```
 
+for science:
+```bash
+python pipeline/datageneration_science.py \
+    --run_name "science" \
+    --model_name "openai/gpt-oss-120b" \
+    --port 8080 \
+    --output_dir "data" \
+    --max_concurrency 256 \
+    --batch_size 512 \
+    --max_questions 4096
+         
+```
 **Step 3: Consistency Filtering**
 Verify correctness by ensuring the teacher model generates consistent answers across multiple attempts.
 ```bash
-python consistency_check_concurrent.py \
+python pipeline/consistencycheck.py \
     --input_files data/generated_qa_math.jsonl \
-    --output_file data/generated_qa_math_consistency.jsonl \
-    --report_file data/generated_qa_math_consistency_report.jsonl \
+    --output_file data/consistent_math.jsonl \
+    --report_file data/report_math_consistency.jsonl \
     --model meta-llama/Llama-3.3-70B-Instruct
 ```
 
 **Step 4: Decontamination**
 Remove samples that overlap with benchmarks (AIME, GPQA, etc.).
+Update the inputs paths required at the begining of the script.
 ```bash
-python decontamination.py --input_file data/generated_qa_math_consistency.jsonl
+python pipeline/decontamination.py
 ```
 
 **Step 5: Deduplication**
 Remove semantically identical questions from the dataset.
+Update the inputs paths required at the begining of the script.
 ```bash
-python deduplication.py --input_file data/generated_qa_math_decontaminated.jsonl
+python deduplication.py
 ```
 
-**Step 6: Novelty Check**
-Final filtering to ensure logical novelty.
-```bash
-python deduplication.py --input_file data/generated_qa_math_deduplicated.jsonl
-```
-
-**Step 7: Training Data Preparation**
+**Step 6: Training Data Preparation**
 Format the final cleaned dataset for the training framework.
 ```bash
 python train_data_prep.py --input_file data/generated_qa_math_final.jsonl
 ```
+> Below are the optional steps for difficulty hiking
+
+**Step 7: Difficulty Rating (optional step)**
+Rate for the difficuly of the questions on a scale of 1-10
+```bash
+python pipeline/diffrating.py --input_file data/consistent_dc_dd_math.json \
+    --output_file data/consistent_dc_dd_math_diffrated.json \
+    --temp_file_prefix data/temp/tmp_diffrating \
+    --model meta-llama/Llama-3.3-70B-Instruct
+```
+**Step 8: Difficulty Hiking**
+This step hikes the difficulty of the 
+
 
 ---
 

@@ -1,0 +1,16 @@
+{"subject": "Biology", "branch": "Molecular Biology", "raw_weight": 85}
+{"subject": "Biology", "branch": "Genetics", "raw_weight": 20}
+{"subject": "Physics", "branch": "Quantum Mechanics", "raw_weight": 64}
+{"subject": "Physics", "branch": "High-Energy Particle Physics", "raw_weight": 46}
+{"subject": "Physics", "branch": "Physics (general)", "raw_weight": 43}
+{"subject": "Physics", "branch": "Astrophysics", "raw_weight": 42}
+{"subject": "Physics", "branch": "Electromagnetism and Photonics", "raw_weight": 12}
+{"subject": "Physics", "branch": "Relativistic Mechanics", "raw_weight": 11}
+{"subject": "Physics", "branch": "Statistical Mechanics", "raw_weight": 4}
+{"subject": "Physics", "branch": "Condensed Matter Physics", "raw_weight": 4}
+{"subject": "Physics", "branch": "Optics and Acoustics", "raw_weight": 1}
+{"subject": "Chemistry", "branch": "Organic Chemistry", "raw_weight": 144}
+{"subject": "Chemistry", "branch": "Chemistry (general)", "raw_weight": 64}
+{"subject": "Chemistry", "branch": "Inorganic Chemistry", "raw_weight": 3}
+{"subject": "Chemistry", "branch": "Analytical Chemistry", "raw_weight": 2}
+{"subject": "Chemistry", "branch": "Physical Chemistry", "raw_weight": 1}

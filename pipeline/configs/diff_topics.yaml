@@ -1,0 +1,434 @@
+# branch
+Number Theory:
+  # topic
+  Divisibility and Prime Factorization:
+    #concepts
+    tools_concepts:
+      - Division Algorithm ($a = bq + r$)
+      - Greatest Common Divisor (GCD) & Least Common Multiple (LCM) (Properties, gcd*lcm = |ab|)
+      - Euclidean Algorithm (For GCD and linear Diophantine solutions)
+      - Bézout's Identity ($ax + by = \text{gcd}(a,b)$)
+      - Prime Numbers & Composite Numbers (Definitions, Sieve of Eratosthenes)
+      - Fundamental Theorem of Arithmetic (Unique Prime Factorization)
+      - p-adic Valuation ($v_p(n)$)
+      - Legendre's Formula (for $v_p(n!)$)
+    theorems:
+      - Euclid's Theorem on Infinitude of Primes
+      - Dirichlet's Theorem on Arithmetic Progressions (Existence Statement)
+
+  Modular Arithmetic:
+    tools_concepts:
+      - Congruence Relation ($\equiv$) (Properties)
+      - Complete Residue System (CRS) & Reduced Residue System (RRS)
+      - Linear Congruences ($ax \equiv b \pmod m$) (Solvability, number of solutions)
+      - Modular Inverse (Existence and calculation)
+      - Order of an Element modulo n ($\text{ord}_n(a)$) (Properties)
+      - Primitive Roots (Existence criteria, properties)
+      - Quadratic Residues & Non-Residues (Definition)
+      - Legendre Symbol ($(\frac{a}{p})$) (Definition and properties)
+    theorems:
+      - Fermat's Little Theorem (FLT)
+      - Euler's Totient Theorem
+      - Wilson's Theorem
+      - Chinese Remainder Theorem (CRT) (Solvability and construction)
+      - Lagrange's Theorem (for polynomial roots modulo p)
+      - Lifting The Exponent Lemma (LTE)
+      - Euler's Criterion
+      - Law of Quadratic Reciprocity (and properties for $(\frac{-1}{p})$, $(\frac{2}{p})$)
+
+  Diophantine Equations:
+    tools_concepts:
+      - Linear Diophantine Equations ($ax+by=c$) (Structure of solutions)
+      - Pythagorean Triples ($x^2+y^2=z^2$) (Parametrization)
+      - Pell's Equation ($x^2 - Dy^2 = 1$) (Structure of solutions, fundamental solution)
+      - Factoring Techniques for Diophantine Equations (Difference of squares, sum/difference of cubes, etc.)
+      - Modular Arithmetic Constraints for Diophantine Equations (Proving no solutions)
+      - Infinite Descent Method (Fermat's Method)
+      - Vieta Jumping Technique
+      - Bounding/Ordering Variables in Diophantine Equations
+    theorems:
+      - Thue's Theorem (Finiteness of solutions - conceptual awareness)
+      - Catalan's Conjecture (Mihailescu's Theorem) (Specific unique solution $3^2 - 2^3 = 1$)
+
+  Number Theoretic Functions:
+    tools_concepts:
+      - $\phi(n)$ (Euler's Totient Function) (Formula, multiplicativity)
+      - $d(n)$ or $\tau(n)$ (Number of Divisors Function) (Formula, multiplicativity)
+      - $\sigma(n)$ (Sum of Divisors Function) (Formula, multiplicativity, $\sigma_k(n)$)
+      - $\mu(n)$ (Möbius Function) (Definition, multiplicativity)
+      - Floor Function ($\lfloor x \rfloor$) & Fractional Part ($\{x\}$) (Properties)
+      - Definitions of Perfect Numbers, Amicable Numbers
+    theorems:
+      - Möbius Inversion Formula
+
+  Polynomials in Number Theory:
+    tools_concepts:
+      - Integer-valued polynomials (Properties)
+      - Cyclotomic Polynomials ($\Phi_n(x)$) (Definition, properties, values)
+    theorems:
+      - Rational Root Theorem
+      - Gauss's Lemma (on polynomial content and irreducibility)
+      - Eisenstein's Criterion (for irreducibility over $\mathbb{Q}$)
+
+Algebra:
+  Polynomials:
+    tools_concepts:
+      - Polynomial Long Division and Remainder Theorem
+      - Factor Theorem and Root Theorem
+      - Vieta's Formulas (Relating roots and coefficients)
+      - Symmetric Sums of Roots (Expressing symmetric polynomials in terms of elementary symmetric polynomials)
+      - Properties of Polynomial Roots (Real, complex, conjugate pairs)
+      - Divisibility of Polynomials
+      - Polynomial Interpolation (e.g., Lagrange Interpolation - concept)
+      - Integer Roots and Rational Root Theorem
+      - Content of a Polynomial
+      - Cyclotomic Polynomials (Algebraic properties, connection to roots of unity)
+    theorems:
+      - Fundamental Theorem of Algebra (Existence of roots in $\mathbb{C}$)
+      - Newton's Sums (Relating power sums of roots and elementary symmetric polynomials)
+      - Gauss's Lemma (on polynomial content and irreducibility over $\mathbb{Q}$)
+      - Eisenstein's Criterion (for irreducibility over $\mathbb{Q}$)
+      - Lucas's Theorem (for binomial coefficients modulo p - often used with polynomials over finite fields)
+
+  Inequalities:
+    tools_concepts:
+      - Basic Inequality Properties (Transitivity, addition/multiplication by constants)
+      - Completing the Square
+      - Trivial Inequality ($x^2 \ge 0$)
+      - Rearrangement of Terms / Substitution Techniques
+      - Homogenization and Normalization
+      - Convexity/Concavity of Functions (Conceptual basis for Jensen's)
+      - Smoothing Principle (Reducing variables or making terms closer)
+    theorems:
+      - AM-GM Inequality (Arithmetic Mean - Geometric Mean)
+      - GM-HM Inequality (Geometric Mean - Harmonic Mean)
+      - Weighted AM-GM Inequality
+      - Cauchy-Schwarz Inequality (Engel form, Titu's Lemma)
+      - Rearrangement Inequality
+      - Jensen's Inequality (for convex/concave functions)
+      - Muirhead's Inequality (for comparing symmetric sums)
+      - Schur's Inequality
+      - Holder's Inequality
+      - Minkowski's Inequality
+      - Nesbitt's Inequality (Specific common Olympiad inequality)
+
+  Functional Equations:
+    tools_concepts:
+      - Substitution of Specific Values (e.g., x=0, y=1, y=x, y=-x)
+      - Checking for Injectivity, Surjectivity, Bijectivity
+      - Finding Fixed Points ($f(x)=x$)
+      - Exploiting Symmetry
+      - Iteration of the function ($f(f(x))$, etc.)
+      - Reduction to Known Equations (e.g., Cauchy forms)
+      - Assuming properties (continuity, differentiability) to find candidate solutions (then verifying for all reals if needed)
+      - Domain and Range Analysis
+    theorems: # Often, the "theorems" are the well-known solutions to standard forms
+      - Cauchy's Functional Equation ($f(x+y)=f(x)+f(y)$) (and its solutions over $\mathbb{Q}$, $\mathbb{R}$ with conditions)
+      - Jensen's Functional Equation ($f(\frac{x+y}{2}) = \frac{f(x)+f(y)}{2}$)
+      - D'Alembert's Functional Equation (Cosine form: $f(x+y)+f(x-y)=2f(x)f(y)$)
+      - D'Alembert's Functional Equation (Sine form: $f(x+y)f(x-y)=f(x)^2-f(y)^2$)
+
+  Sequences and Series:
+    tools_concepts:
+      - Arithmetic Progressions (AP) (Definition, sum formula)
+      - Geometric Progressions (GP) (Definition, sum formula, infinite GP sum)
+      - Recurrence Relations (Definition, finding terms)
+      - Linear Homogeneous Recurrence Relations with Constant Coefficients (Method of characteristic equation)
+      - Linear Non-Homogeneous Recurrence Relations
+      - Telescoping Sums and Products
+      - Bounding Sequences (Monotonicity, boundedness)
+      - Summation Techniques ($\sum k, \sum k^2, \sum k^3$)
+      - Difference Operator / Finite Calculus (less common, but a tool)
+    theorems:
+      - Binet's Formula (for Fibonacci numbers - example of solving a recurrence)
+      - Master Theorem for divide-and-conquer recurrences (more CS, but spirit can appear)
+      # Specific convergence/divergence tests are usually beyond Olympiad scope unless very elementary
+
+  Abstract Algebra (Elements relevant to Olympiads):
+    tools_concepts: # Focus on concrete applications rather than deep theory
+      - Basic Group Properties (Closure, associativity, identity, inverse - often in modular arithmetic or transformations)
+      - Cyclic Groups (Conceptual understanding, e.g., $(\mathbb{Z}/p\mathbb{Z})^*$ is cyclic)
+      - Lagrange's Theorem (Order of subgroup divides order of group - often used in Number Theory contexts)
+      - Group Actions on Sets (Conceptual basis for Burnside's Lemma/Polya Enumeration)
+      - Basic Ring and Field Properties (e.g., $\mathbb{Z}_p$ is a field, properties of polynomial rings - conceptual)
+    theorems:
+      - Cayley's Theorem (Every group is isomorphic to a group of permutations - conceptual)
+      # Most deep theorems from abstract algebra are beyond typical Olympiad scope, but their spirit or basic consequences can be used.
+
+Combinatorics:
+  Basic Counting Principles:
+    tools_concepts:
+      - Addition Principle (Rule of Sum)
+      - Multiplication Principle (Rule of Product)
+      - Permutations ($P(n,k)$)
+      - Combinations ($\binom{n}{k}$) (Properties of binomial coefficients, Pascal's Identity)
+      - Stars and Bars (Combinations with repetition, solutions to $x_1+...+x_k=n$)
+      - Casework and Complementary Counting (Strategy)
+      - Bijection Principle (Counting one set by mapping to another)
+      - Double Counting (Establishing an identity by counting a quantity in two ways)
+    theorems:
+      - Binomial Theorem ($(x+y)^n = \sum \binom{n}{k}x^k y^{n-k}$)
+      - Multinomial Theorem
+      - Vandermonde's Identity (for binomial coefficients)
+      - Lucas's Theorem (for $\binom{n}{k} \pmod p$)
+
+  Advanced Counting Techniques:
+    tools_concepts:
+      - Principle of Inclusion-Exclusion (PIE) (General formula and applications)
+      - Derangements (!n or $D_n$)
+      - Recursion and Recurrence Relations (Setting up combinatorial recurrences)
+      - Generating Functions (Ordinary - OGF) (Representing sequences, solving recurrences, coefficient extraction)
+      - Exponential Generating Functions (EGF) (For labeled objects, permutations)
+      - Rook Polynomials (For counting placements on a board with restrictions - less common)
+    theorems:
+      # Many "theorems" here are specific results derived using these techniques or identities related to generating functions.
+
+  Graph Theory:
+    tools_concepts:
+      - Basic Definitions (Vertices, edges, degree, directed/undirected graphs, weighted graphs)
+      - Paths, Cycles, Connectedness, Components
+      - Trees (Properties: $n-1$ edges, unique paths, acyclic and connected)
+      - Bipartite Graphs (Characterization: no odd cycles)
+      - Adjacency Matrix and Incidence Matrix (Representations)
+      - Graph Isomorphism
+      - Eulerian Paths and Circuits (Conditions based on vertex degrees)
+      - Hamiltonian Paths and Cycles (No simple general condition, often NP-complete - problems focus on specific cases or properties)
+      - Planar Graphs (Definition, Kuratowski's Theorem - conceptual awareness)
+      - Graph Coloring (Vertex coloring, chromatic number, edge coloring)
+      - Matchings in Graphs (e.g., Hall's Marriage Theorem condition)
+      - Network Flows (Max-flow min-cut theorem - conceptual)
+    theorems:
+      - Handshaking Lemma ($\sum \text{deg}(v) = 2|E|$)
+      - Euler's Formula for Planar Graphs ($V-E+F=2$)
+      - Mantel's Theorem (Max edges in a triangle-free graph)
+      - Turan's Theorem (Generalization of Mantel's Theorem - extremal graph theory)
+      - Hall's Marriage Theorem (Condition for perfect matching in bipartite graphs)
+      - Cayley's Formula (Number of spanning trees in $K_n$ is $n^{n-2}$)
+      - Ramsey's Theorem (Existence of monochromatic cliques in edge-colored complete graphs, e.g., $R(3,3)=6$)
+
+  Combinatorial Designs & Extremal Combinatorics:
+    tools_concepts:
+      - Set Systems (Families of subsets)
+      - Intersecting Families, Antichains
+      - Pigeonhole Principle (PHP) (Simple and generalized forms, advanced applications)
+      - Extremal Principle (Considering objects with maximal/minimal properties)
+      - Design Theory Basics (e.g., Balanced Incomplete Block Designs - BIBD - conceptual)
+      - Latin Squares, Orthogonal Latin Squares
+    theorems:
+      - Sperner's Theorem (Max size of an antichain)
+      - Dilworth's Theorem (Relating antichains and chain decompositions in posets)
+      - Erdos-Ko-Rado Theorem (Max size of an intersecting family of k-subsets)
+      # Many results in this area are specific extremal bounds rather than general named theorems taught widely.
+
+  Probabilistic Method & Combinatorial Probability:
+    tools_concepts:
+      - Basic Probability (Sample space, events, independence, conditional probability)
+      - Expected Value (Linearity of Expectation)
+      - Indicator Variables (Random variables, powerful tool with linearity of expectation)
+      - Basic Probabilistic Method (Showing existence by proving probability > 0)
+      - Alteration Method (Modifying a random structure to get desired properties)
+      - Lovasz Local Lemma (Advanced tool for rare events - conceptual awareness)
+    theorems:
+      # Results are often existence proofs rather than named theorems, e.g., "There exists a graph with property X..."
+      # Markov's Inequality, Chebyshev's Inequality (Basic probabilistic bounds)
+
+  Combinatorial Games & Processes:
+    tools_concepts:
+      - Invariants (Quantities that remain unchanged during a process)
+      - Monovariants (Quantities that strictly increase or decrease)
+      - Winning and Losing Positions (P-positions, N-positions)
+      - Symmetry Arguments in Games
+      - Strategy Stealing Arguments
+      - Sprague-Grundy Theorem (Nim-values, for impartial games - conceptual awareness)
+      - Coloring Arguments (e.g., tiling problems)
+    theorems:
+      # Often specific to the game or process being analyzed.
+      # Zermelo's Theorem (Existence of a winning strategy in finite, perfect information, two-player games with no draws)
+
+Geometry:
+  Triangle Geometry (Advanced):
+    tools_concepts:
+      - Special Points (Centroid, Incenter, Circumcenter, Orthocenter, Excenters, Nagel Point, Gergonne Point, Isodynamic Points, Isogonal Conjugates, Symmedian Point/Lemoine Point) and their properties/collinearities/concurrencies.
+      - Euler Line and Nine-Point Circle (Properties and relations)
+      - Simson Line (and its generalizations)
+      - Pedal Triangles
+      - Cevas Theorem (Trigonometric, standard, and converse forms)
+      - Menelaus Theorem (Standard and converse forms)
+      - Angle Bisector Theorem (Internal and External)
+      - Stewart's Theorem
+      - Routh's Theorem (for ratios in cevians)
+      - Properties of Medians, Altitudes, Angle Bisectors (lengths, intersections)
+      - Isogonal Conjugacy (Definition and key properties)
+      - Isotomic Conjugacy (Definition and key properties)
+      - Brocard Points and Brocard Angle
+    theorems:
+      - Morley's Trisector Theorem
+      - Napoleon's Theorem
+      - Van Aubel's Theorem
+      - Feuerbach's Theorem (Nine-point circle tangency to incircle/excircles)
+      - Lester's Theorem (Circumcenter, nine-point center, and Brocard points are concyclic)
+
+  Circles and Cyclic Quadrilaterals:
+    tools_concepts:
+      - Power of a Point Theorem (for intersecting secants, tangents, chords)
+      - Radical Axis (of two circles, properties, construction)
+      - Radical Center (of three circles)
+      - Coaxal Circles (Pencils of circles)
+      - Properties of Cyclic Quadrilaterals (Opposite angles sum to 180, external angle property)
+      - Properties of Tangential Quadrilaterals (Opposite sides sum equally)
+      - Ptolemy's Theorem and Ptolemy's Inequality (for cyclic and general quadrilaterals)
+      - Casey's Theorem (Generalized Ptolemy's Theorem for tangent circles)
+      - Directed Angles (modulo $\pi$ or $2\pi$, for handling configurations carefully)
+    theorems:
+      - Brahmagupta's Formula (Area of a cyclic quadrilateral)
+      - Japanese Theorem for Cyclic Quadrilaterals
+      - Miquel's Theorem and Miquel Point (for complete quadrilaterals or triangles with points on sides)
+
+  Geometric Transformations:
+    tools_concepts:
+      - Homothety (Dilation) (Properties, center of homothety, composition)
+      - Rotation (Properties, center of rotation, composition)
+      - Reflection (Properties, composition creating rotations/translations)
+      - Translation
+      - Spiral Similarity (Composition of homothety and rotation)
+      - Inversion (Properties: maps circles/lines to circles/lines, preserves angles (conformal), changes distances in a specific way, center of inversion)
+      - Glide Reflection
+    theorems:
+      # Many "theorems" are properties preserved or created by these transformations.
+      # e.g., "Homothety maps a line to a parallel line."
+      # e.g., "Inversion preserves cross-ratios of four concyclic points if center of inversion is also on the circle." (Special case)
+
+  Analytic and Vectorial Geometry (as Tools):
+    tools_concepts:
+      - Cartesian Coordinates (Distance, slope, midpoint, equation of line/circle)
+      - Vector Addition, Subtraction, Scalar Multiplication
+      - Dot Product (for angles, perpendicularity, lengths)
+      - Cross Product (for area, normal vectors, collinearity in 3D, orientation)
+      - Barycentric Coordinates (Representing points in a triangle, proving concurrency/collinearity, area ratios)
+      - Complex Numbers in Geometry (Representing points, vectors, rotations, similarities, conditions for collinearity/concyclicity, roots of unity for regular polygons)
+      - Distance Formulas (Point-line, point-plane)
+    theorems:
+      # Results are often derived using these tools rather than being standalone theorems from this "topic" for Olympiads.
+      # e.g., Shoelace Formula (for area of polygon using coordinates).
+      # e.g., Conditions for collinearity/concurrency using determinants or vector dependencies.
+
+  Projective Geometry (Elements for Olympiads):
+    tools_concepts:
+      - Points at Infinity, Line at Infinity
+      - Duality Principle
+      - Cross-Ratio (of four collinear points or four concurrent lines, invariance under projection)
+      - Harmonic Bundles and Harmonic Conjugates (Cross-ratio = -1, geometric constructions)
+      - Perspective Triangles
+      - Complete Quadrilaterals and Complete Quadrangles (Harmonic properties)
+      - Poles and Polars (with respect to a conic, especially a circle)
+    theorems:
+      - Desargues' Theorem (Perspective triangles from a point and a line)
+      - Pappus's Hexagon Theorem
+      - Pascal's Theorem (for hexagons inscribed in a conic)
+      - Brianchon's Theorem (for hexagons circumscribed about a conic)
+      # La Hire's Theorem
+
+  Solid Geometry (Euclidean 3D):
+    tools_concepts:
+      - Lines and Planes in 3D (Intersection, parallelism, perpendicularity, skew lines)
+      - Dihedral Angles, Solid Angles
+      - Properties of Basic Solids (Prisms, pyramids, cylinders, cones, spheres)
+      - Euler's Formula for Polyhedra ($V-E+F=2$)
+      - Regular Polyhedra (Platonic solids, properties)
+      - Coordinate Geometry in 3D (Distance, equations of planes/lines, vector operations)
+      - Cavalieri's Principle (for volumes)
+    theorems:
+      # Fewer named "theorems" at Olympiad level compared to 2D; more about spatial reasoning and application of 2D principles in planes.
+      # e.g., Relationship between slant height, height, and base radius of a cone.
+      # Desargues' Theorem can be proven using 3D perspective.
+
+  Combinatorial Geometry:
+    tools_concepts:
+      - Convex Hull (Properties, algorithms like Graham scan - conceptual)
+      - Geometric Inequalities (e.g., Triangle inequality, Ptolemy's inequality, Isoperimetric inequality - basic form)
+      - Covering, Packing, and Tiling Problems (Basic examples)
+      - Incidence Problems (e.g., Sylvester-Gallai problem spirit)
+      - Coloring Geometric Configurations
+      - Helly's Theorem (Intersection of convex sets - conceptual)
+    theorems:
+      - Sylvester-Gallai Theorem (Given n points, not all collinear, there is a line containing exactly two of them)
+      - Pick's Theorem (Area of a simple polygon whose vertices are integer lattice points)
+      # Erdos-Anning Theorem
+      # De Bruijn–Erdős theorem (projective plane version)
+
+Probability:
+  Foundations and Basic Computations:
+    tools_concepts:
+      - Sample Space, Event Space, Probability Measure (Axioms of Probability)
+      - Equally Likely Outcomes (Classical Definition: Favorable / Total)
+      - Complementary Events ($P(A') = 1 - P(A)$)
+      - Union and Intersection of Events ($P(A \cup B)$, $P(A \cap B)$)
+      - Conditional Probability ($P(A|B) = P(A \cap B) / P(B)$)
+      - Multiplication Rule for Conditional Probability ($P(A \cap B) = P(A|B)P(B)$)
+      - Independent Events ($P(A \cap B) = P(A)P(B)$)
+      - Law of Total Probability (Partitioning sample space, $P(A) = \sum P(A|B_i)P(B_i)$)
+      - Bayes' Theorem
+      - Tree Diagrams (For visualizing multi-stage experiments)
+    theorems:
+      - Boole's Inequality / Union Bound ($P(\cup A_i) \le \sum P(A_i)$)
+      - Bonferroni Inequalities (Generalizations of PIE for probability)
+
+  Discrete Random Variables and Expectation:
+    tools_concepts:
+      - Random Variable (Definition, discrete case)
+      - Probability Mass Function (PMF)
+      - Expected Value (Expectation) of a Discrete Random Variable ($E[X] = \sum x P(X=x)$)
+      - Linearity of Expectation ($E[X+Y] = E[X]+E[Y]$, $E[cX] = cE[X]$ - powerful even if X, Y not independent)
+      - Indicator Variables (Bernoulli random variables, $I_A=1$ if A occurs, 0 otherwise; $E[I_A]=P(A)$)
+      - Variance and Standard Deviation (Basic definitions, properties like $Var(X) = E[X^2] - (E[X])^2$)
+      - Covariance (For $Var(X+Y)$, conceptual)
+      - Common Discrete Distributions (Bernoulli, Binomial, Geometric, Hypergeometric - recognizing their structure in problems)
+    theorems:
+      # Linearity of Expectation itself is a theorem-level concept in its application.
+      # Formulas for E[X] and Var(X) for common distributions (e.g., E[Bin(n,p)]=np)
+
+  Combinatorial Probability (Heavy Overlap with Combinatorics Branch):
+    tools_concepts:
+      - Counting Techniques (Permutations, combinations, stars and bars, PIE) applied to find favorable/total outcomes.
+      - Problems involving Selections, Arrangements, Distributions with probabilistic questions.
+      - Derangements (Probability that no item is in its original position).
+      - Matching Problems (e.g., Hat-check problem).
+      - Probabilistic arguments for existence (If $P(\text{Property holds}) > 0$, then an object with that property exists).
+    theorems:
+      # Many "theorems" are combinatorial identities used in a probabilistic context.
+      # e.g., using Vandermonde's Identity to sum probabilities in hypergeometric settings.
+
+  Geometric Probability:
+    tools_concepts:
+      - Calculating probabilities as ratios of lengths, areas, or volumes.
+      - Problems involving random points in geometric figures (intervals, squares, circles, cubes).
+      - Buffon's Needle Problem (Classic example - conceptual understanding).
+      - Coordinate Geometry methods to define regions and calculate areas/volumes.
+      - Symmetry arguments to simplify calculations.
+    theorems:
+      # Results are usually derived from geometric formulas rather than specific "probability theorems" for geometry.
+      # Bertrand's Paradox (Illustrates importance of defining "random" precisely - conceptual)
+
+  Stochastic Processes & Recurrence Relations (Introductory/Discrete):
+    tools_concepts:
+      - Random Walks (1D, 2D - simple cases, probability of reaching a state, expected number of steps).
+      - Markov Chains (Finite state space, transition probabilities, transition matrix - basic concepts).
+      - First Step Analysis (Setting up recurrence relations for probabilities or expected values in processes).
+      - Gambler's Ruin Problem (Classic example).
+      - Waiting Time Problems (e.g., expected number of trials until first success - Geometric distribution).
+      - Absorption Probabilities and Expected Time to Absorption (for simple Markov chains).
+    theorems:
+      # Solutions to standard recurrence relations for probabilities/expectations.
+      # Existence of steady-state distributions for certain types of Markov chains (conceptual).
+
+  Advanced Probabilistic Techniques (Rare, but can inspire hard problems):
+    tools_concepts:
+      - Probabilistic Method (Using probability to prove deterministic combinatorial results - beyond basic existence).
+      - Alteration Method (Refining a random construction).
+      - Second Moment Method (Using variance to show concentration around the mean - very advanced for Olympiads).
+      - Martingales (Sequence of random variables where conditional expectation of next given current is current - highly advanced, but simplest forms/ideas might inspire).
+    theorems:
+      - Markov's Inequality ($P(X \ge a) \le E[X]/a$)
+      - Chebyshev's Inequality ($P(|X-\mu| \ge k\sigma) \le 1/k^2$)
+      - Chernoff Bounds / Hoeffding's Inequality (Exponential tail bounds - conceptual awareness, very rare).
+      - Lovasz Local Lemma (Tool for showing existence when events are "mostly" independent - very advanced).
