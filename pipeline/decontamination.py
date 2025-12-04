@@ -5,8 +5,6 @@
 """
 import json
 import yaml
-import seaborn as sns
-import matplotlib.pyplot as plt
 import os
 from sentence_transformers import SentenceTransformer
 import torch
@@ -23,17 +21,17 @@ import pandas as pd
 QUESTION_FIELDS = ["question", "problem", "instruction"]  # Possible field names for questions in test sets and training data
 model_name = "meta-llama/Llama-3.3-70B-Instruct"
 embedding_model = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-temp_dir = "data/temp"
+temp_dir = "temp"
 temp_file = "temp_decontamination.jsonl"
 temp_file_name = os.path.join(temp_dir, temp_file) 
 input_path = "data/consistent_math.jsonl"
 output_file = "data/consistent_dc_math.jsonl"
 contaminated_output_file = "data/contaminated_math.jsonl"
 test_set_paths = [
-    "/home/LIMO/eval/data/gpqa/test.jsonl",
-    "/home/LIMO/eval/data/aime/test.jsonl",
-    "/home/LIMO/eval/data/aime25/test.jsonl",
-    "/home/LIMO/eval/data/math/test.jsonl"
+    "../eval/data/gpqa/test.jsonl",
+    "../eval/data/aime/test.jsonl",
+    "../eval/data/aime25/test.jsonl",
+    "../eval/data/math/test.jsonl"
 ]
 report_path = "data/report_math_dc.jsonl"
 k = 5 # number of similar problems to consider
@@ -44,6 +42,8 @@ train_data = []
 train_problems = []
 test_problems = []
 
+# create the temp directory if it doesn't exist
+os.makedirs(temp_dir, exist_ok=True)
 
 
 def findSimilarities():
@@ -117,7 +117,7 @@ def findSimilarities():
     print(f"Printing one sample record form train data\n\n {train_data[0]} \n\n")
     print(f"Total number of training records with similar test problems: {len(train_data)}")
 
-## now get the similarity check. -----------------------------------------------------------------
+## now get the similarity check with LLM. -----------------------------------------------------------------
 
 def prepare_prompts(tokenizer):
     contamination_prompt_old = """Determine whether the provided new question is identical to or a paraphrased version of the existing question given. 
@@ -283,6 +283,10 @@ def populateSummaries():
         json.dump(report_dict, f, indent=4)
 
     print(f"contamination report written to: {report_path}")
+
+    ## remove the temp file if it exists
+    if os.path.exists(temp_file_name):
+        os.remove(temp_file_name)
 
 
 

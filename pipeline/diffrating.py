@@ -4,7 +4,8 @@ Script to rate the difficulty of the questions in the input file.
 Usage:
     python pipeline/diffrating.py --input_file data/consistent_dc_dd_math.json \
         --output_file data/consistent_dc_dd_math_diffrated.json \
-        --temp_file_prefix data/temp/tmp_diffrating \
+        --temp_folder temp \
+        --temp_file_prefix tmp_diffrating \
         --model meta-llama/Llama-3.3-70B-Instruct
 """
 import json
@@ -14,6 +15,7 @@ from types import SimpleNamespace
 import os
 import multiprocessing
 
+import numpy as np
 import pandas as pd
 from tqdm import tqdm
 from transformers import AutoTokenizer
@@ -47,14 +49,14 @@ class DiffRating:
         self.tokenizer = AutoTokenizer.from_pretrained(opts.model)
 
     def __ratingToBucket(self, rating):
-    buckets = list(np.arange(1, 10.1, 0.5)) 
-    bucket = 0 
-    distance = 100000
-    for b in buckets:
-        if abs(rating - b) < distance:
-            distance = abs(rating - b)
-            bucket = b
-    return bucket
+        buckets = list(np.arange(1, 10.1, 0.5)) 
+        bucket = 0 
+        distance = 100000
+        for b in buckets:
+            if abs(rating - b) < distance:
+                distance = abs(rating - b)
+                bucket = b
+        return bucket
 
     def __processPrompts(self, data):
 
@@ -93,7 +95,7 @@ class DiffRating:
 
     def generate(self, opts, data, gpu):
         os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu)
-        temp_file = f"{opts.temp_file_prefix}_{gpu}.jsonl"
+        temp_file = os.path.join(opts.temp_folder, f"{opts.temp_file_prefix}_{gpu}.jsonl")
 
         prompts = self.__processPrompts(data)
 
@@ -148,14 +150,12 @@ class DiffRating:
         for process in processes:
             process.join()
 
-    def saveResults(self, opts):
-
-        temp_dir = "/".join(opts.temp_file_prefix.split("/")[:-1])
-        prefix = opts.temp_file_prefix.split("/")[-1]
+    def saveResults(self, opts):      
         
-        print(f"Attempting to read temp files from the directory: {temp_dir}, with prefix: {prefix}")
         
-        temp_files = [os.path.join(temp_dir, file) for file in os.listdir(temp_dir) if prefix in file]
+        print(f"Attempting to read temp files from the directory: {opts.temp_folder}, with prefix: {opts.temp_file_prefix}")
+        
+        temp_files = [os.path.join(opts.temp_folder, file) for file in os.listdir(opts.temp_folder) if opts.temp_file_prefix in file]
         temp_files.sort()
 
         print(f"Temp files found \n\n: {temp_files}\n\n")
@@ -183,6 +183,10 @@ class DiffRating:
 
 
 def main(opts):
+
+    # get the temp direcoty form temp_file_prefix and create it if it doesn't exist    
+    os.makedirs(opts.temp_folder, exist_ok=True)
+
     dr = DiffRating()
     dr.prepareData(opts)
     dr.load_tokenizer(opts)
@@ -194,9 +198,10 @@ def getArguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=False, help="All arguments required should be in the config yaml config file")
     parser.add_argument("--input_file", required=False, help="Path of the input file")
-    parser.add_argument("--model", required=False, help="model to be used to rate the questions difficulty")
+    parser.add_argument("--model", required=False, default="meta-llama/Llama-3.3-70B-Instruct", help="model to be used to rate the questions difficulty")
     parser.add_argument("--output_file", required=False, help="file to save")
-    parser.add_argument("--temp_file_prefix", required=False, help="used to store the temporary files")
+    parser.add_argument("--temp_folder", default="temp", help="Folder to store the temporary files")
+    parser.add_argument("--temp_file_prefix", default="tmp_diffrating", help="Prefix of the temporary files")
 
     return parser.parse_args()
 

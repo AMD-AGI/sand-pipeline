@@ -2,7 +2,7 @@
 Script to perform consistency check between two solutions provided for each question in the input data.
 
 Usage:
-    python pipeline/consistencycheck.py --input_files data/generated_qa_math.jsonl \
+    python consistencycheck.py --input_files data/generated_qa_math.jsonl \
         --output_file data/consistent_math.jsonl \
         --report_file data/report_math_consistency.jsonl \
         --model meta-llama/Llama-3.3-70B-Instruct
@@ -91,7 +91,7 @@ class Consistency:
         
         batch_size = opts.batch_size        
         chunk_size = len(self.all_records) // num_processes   
-        temp_file = os.path.join(opts.temp_file_folder, f"temp_consistency_part{pid}.jsonl")  
+        temp_file = os.path.join(opts.temp_folder, f"temp_consistency_part{pid}.jsonl")  
          
         ## create temp file
         
@@ -176,8 +176,8 @@ class Consistency:
 
 def mergeAllFiles(opts):
     total_consistent  = 0    
-    all_files = os.listdir(opts.temp_file_folder)
-    all_files = [os.path.join(opts.temp_file_folder, temp_file) for temp_file in all_files if 'temp_consistency' in temp_file]
+    all_files = os.listdir(opts.temp_folder)
+    all_files = [os.path.join(opts.temp_folder, temp_file) for temp_file in all_files if 'temp_consistency' in temp_file]
     total_data = []
 
     all_files.sort()
@@ -277,7 +277,7 @@ def getArgs():
     argparser.add_argument("--input_files", required=False, nargs='+', help="List of input files")
     argparser.add_argument("--output_file", required=False, default="data/consistent_from5k.jsonl", help="output file to be written results to")
     argparser.add_argument("--report_file", required=False, default="data/consistency_report.jsonl", help="file to write the report")
-    argparser.add_argument("--temp_file_folder", required=False, default="data/temp", help="output file to be written results to")
+    argparser.add_argument("--temp_folder", required=False, default="temp", help="Folder to store the temporary files")
     argparser.add_argument("--model", required=False, default="meta-llama/Llama-3.3-70B-Instruct", help="model path to assess the equality of answers")
     argparser.add_argument("--batch_size", required=False, default=1, type=int, help="batch size for processing")
     return argparser.parse_args()
@@ -298,14 +298,14 @@ if __name__ == "__main__":
             "input_files": config["consistency"]["raw_data"],
             "output_file": config["consistency"]["output_file"].format(run_name=run_name_value),
             "report_file": config["consistency"]["report"],
-            "temp_file_folder": config["consistency"]["temp_folder"].format(run_name=run_name_value),
+            "temp_folder": config["consistency"]["temp_folder"].format(run_name=run_name_value),
             "model": config["consistency"]["model"],
             "batch_size": config["consistency"].get("batch_size", 1)
         }
 
         opts = SimpleNamespace(**opts_dict)
 
-    os.makedirs(opts.temp_file_folder, exist_ok=True)
+    os.makedirs(opts.temp_folder, exist_ok=True)
     os.makedirs(os.path.dirname(opts.output_file), exist_ok=True)
     os.makedirs(os.path.dirname(opts.report_file), exist_ok=True)
 

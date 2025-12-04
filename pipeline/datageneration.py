@@ -313,8 +313,8 @@ def qaGeneration():
         total_data_count += this_loop_data_count
         end_time = time.time()
         current_iteration_duration = end_time - current_iteration_start_time
-        logging.info(f"[Answer Generated in Current Loop] {this_loop_data_count}")
-        logging.info(f"[Question Generated in total so far] {total_data_count}")
+        logging.info(f"[Data Generated in Current Loop] {this_loop_data_count}")
+        logging.info(f"[Data Generated in total so far] {total_data_count}")
         logging.info(f"[Current Iteration Duration] {current_iteration_duration} seconds")
 
     end_time = time.time()
@@ -361,6 +361,10 @@ def saveToFile(results):
             json_string = json.dumps(record)
             f.write(json_string + "\n")
 
+    # delete the temporary file if it exists
+    if os.path.exists(tmp_q_output_file):
+        os.remove(tmp_q_output_file)
+
 
 
 def setVariables(args):
@@ -378,8 +382,13 @@ def setVariables(args):
     MAX_CONCURRENCY = args.max_concurrency
     N = args.n
     output_file = os.path.join(SCRIPT_DIR, OUTPUT_DIR, f'generated_qa_{args.run_name}.jsonl')
-    tmp_q_output_file = os.path.join(SCRIPT_DIR, OUTPUT_DIR, f'temp_qa_{args.run_name}.jsonl')
-    log_file = os.path.join(SCRIPT_DIR, 'logs', f'log_qageneration_{args.run_name}.log')
+    tmp_q_output_file = os.path.join(SCRIPT_DIR, args.temp_folder, f'temp_qa_{args.run_name}.jsonl')
+    log_file = os.path.join(SCRIPT_DIR, args.log_folder, f'log_qageneration_{args.run_name}.log')
+
+    ## create the output directory and the logs directory if they don't exist
+    os.makedirs(os.path.join(SCRIPT_DIR, OUTPUT_DIR), exist_ok=True)
+    os.makedirs(os.path.join(SCRIPT_DIR, args.log_folder), exist_ok=True)
+    os.makedirs(os.path.join(SCRIPT_DIR, args.temp_folder), exist_ok=True)
     
     ## Logging setup
     logging.basicConfig(  
@@ -414,6 +423,8 @@ def getArguments():
     parser.add_argument("--n", type=int, default=1, help="number of answers to be generated for each question")
     parser.add_argument("--run_name", default="mathdata", help="Identifier appended to output and log filenames")
     parser.add_argument("--output_dir", default="data/multimodal", help="output data directory to save")
+    parser.add_argument("--temp_folder", default="temp", help="Folder to store the temporary files")
+    parser.add_argument("--log_folder", default="logs", help="Folder to store the logs")
     parser.add_argument("--overwrite", type=str, default="yes", help="overwrite output file if exists")
     args = parser.parse_args()
 

@@ -122,29 +122,33 @@ cd repo_name/pipeline
 Before generating data, you must start the vLLM server with the teacher model (e.g., `gpt-oss-120b`). Run the following command in a separate terminal or background process:
 
 ```bash
-#!/bin/bash
-TP=8
 export VLLM_ROCM_USE_AITER=1
 export VLLM_USE_AITER_UNIFIED_ATTENTION=1
 export VLLM_ROCM_USE_AITER_MHA=0
 
 vllm serve openai/gpt-oss-120b \
-  --tensor-parallel $TP \
-  --port 8087 \
-  --no-enable-prefix-caching \
-  --disable-log-requests \
-  --compilation-config '{"full_cuda_graph": true}'
+    --tensor-parallel 8 \
+    --port 8080 \
+    --max-num-seqs 4096 \
+    --max-model-len 52072 \
+    --max-num-batched-tokens 65536 \
+    --gpu-memory-utilization 0.90 \
+    --no-enable-prefix-caching \
+    --disable-log-requests \
+    --enable-chunked-prefill \
+    --compilation-config '{"full_cuda_graph": true}'
 ```
 
 **Step 2: Data Generation**
 
 for math:
+
 Once the server is up and listening on port 8087, run the generation script to create raw question-answer pairs:
 ```bash
-python pipeline/datageneration.py \
+python datageneration.py \
     --run_name "math" \
     --model_name "openai/gpt-oss-120b" \
-    --port 8087 \
+    --port 8080 \
     --output_dir "data" \
     --max_concurrency 256 \
     --batch_size 512 \
@@ -153,7 +157,7 @@ python pipeline/datageneration.py \
 
 for science:
 ```bash
-python pipeline/datageneration_science.py \
+python datageneration_science.py \
     --run_name "science" \
     --model_name "openai/gpt-oss-120b" \
     --port 8080 \
@@ -164,9 +168,10 @@ python pipeline/datageneration_science.py \
          
 ```
 **Step 3: Consistency Filtering**
+
 Verify correctness by ensuring the teacher model generates consistent answers across multiple attempts.
 ```bash
-python pipeline/consistencycheck.py \
+python consistencycheck.py \
     --input_files data/generated_qa_math.jsonl \
     --output_file data/consistent_math.jsonl \
     --report_file data/report_math_consistency.jsonl \
@@ -174,13 +179,15 @@ python pipeline/consistencycheck.py \
 ```
 
 **Step 4: Decontamination**
+
 Remove samples that overlap with benchmarks (AIME, GPQA, etc.).
 Update the inputs paths required at the begining of the script.
 ```bash
-python pipeline/decontamination.py
+python decontamination.py
 ```
 
 **Step 5: Deduplication**
+
 Remove semantically identical questions from the dataset.
 Update the inputs paths required at the begining of the script.
 ```bash
@@ -188,23 +195,50 @@ python deduplication.py
 ```
 
 **Step 6: Training Data Preparation**
+
 Format the final cleaned dataset for the training framework.
 ```bash
 python train_data_prep.py --input_file data/generated_qa_math_final.jsonl
 ```
-> Below are the optional steps for difficulty hiking
+> **Below are the optional steps for difficulty hiking of the less difficult questions and subsequently generating the solutions for them, abd including back to the training data**
 
-**Step 7: Difficulty Rating (optional step)**
+**Step 7: Difficulty Rating**
+
 Rate for the difficuly of the questions on a scale of 1-10
 ```bash
-python pipeline/diffrating.py --input_file data/consistent_dc_dd_math.json \
-    --output_file data/consistent_dc_dd_math_diffrated.json \
-    --temp_file_prefix data/temp/tmp_diffrating \
+python diffrating.py \
+    --input_file data/consistent_dc_dd_math.jsonl \
+    --output_file data/consistent_dc_dd_math_diffrated.jsonl \
     --model meta-llama/Llama-3.3-70B-Instruct
 ```
 **Step 8: Difficulty Hiking**
-This step hikes the difficulty of the 
 
+This step hikes the difficulty of the existing low difficul questions, create new difficult questions from them.
+
+```bash
+python diffhiking_guided.py \
+    --input_file data/consistent_dc_dd_math_diffrated.jsonl \
+    --output_file data/diffhiked_math.jsonl \
+    --model_name "openai/gpt-oss-120b" \
+    --port 8080 \
+    --batch_size 2048 \
+    --max_workers 512
+```
+
+**Step 9: Solution Generation**
+
+Generate solutions for the difficulty hiked quetions
+
+```bash
+python solution_generation.py \
+    --input_file "data/input.jsonl" \
+    --output_file "data/output.jsonl" \
+    --temp_file "data/temp.jsonl" \
+    --model_name "openai/gpt-oss-120b" \
+    --port 8080 \
+    --batch_size 4096 \
+    --max_workers 1024
+```
 
 ---
 

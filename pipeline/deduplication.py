@@ -6,7 +6,7 @@ from model2vec import StaticModel
 
 ##
 input_file = "data/consistent_dc_math.jsonl"
-output_file = "data/consistent_dc_dd_math.json"
+output_file = "data/consistent_dc_dd_math.jsonl"
 report_file = "data/report_math_dd.jsonl"
 threshold_value = 0.99
 question_fields = ["question", "problem", "instruction"]
