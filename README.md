@@ -313,3 +313,19 @@ This project is licensed under the **Open RAIL-MSD** license. This is an open, r
 The license includes standard use-based restrictions to prevent harmful applications (e.g., illegal activities, generating harmful content, high-risk applications). These restrictions are designed to promote responsible AI development while keeping the license permissive for legitimate use cases.
 
 For full license terms and conditions, please see the [LICENSE](https://github.com/AMD-AGI/sand-pipeline/blob/main/LICENSE.txt) file.
+
+## Citation
+
+If you use this model, dataset, or pipeline in your research, please cite our work:
+
+```bibtex
+@misc{manem025sandmathusingllmsgenerate,
+      title={SAND-Math: Using LLMs to Generate Novel, Difficult and Useful Mathematics Questions and Answers},
+      author={Chaitanya Manem and Pratik Prabhanjan Brahma and Prakamya Mishra and Zicheng Liu and Emad Barsoum},
+      year={2025},
+      eprint={2507.20527},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2507.20527},
+}
+```
