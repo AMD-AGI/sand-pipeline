@@ -146,9 +146,6 @@ class DiffHikingGuided:
         self.df_theorems = pd.DataFrame(theorems_data)        
 
 
-        
-
-
 
     def __processPrompts(self, data):
         

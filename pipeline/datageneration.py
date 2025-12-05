@@ -349,8 +349,6 @@ def processSolutionResults(qresults, results, N, prompts):
             sol_index = int(i*N + n)
             qresults[i][f"solution_{n+1}"] = results.get(sol_index+1, {"result_data":''})["result_data"]
             qresults[i][f"completion_tokens_solution_{n+1}"] = results.get(sol_index+1, {"completion_tokens":0})["completion_tokens"]
-            if i==0:
-                qresults[i]["prompt_solution"] = prompts[i]
 
 
     return qresults

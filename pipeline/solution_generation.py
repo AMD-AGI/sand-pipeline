@@ -25,8 +25,6 @@ import requests
 from tqdm import tqdm
 import logging
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 from openai import OpenAI
 from transformers import AutoTokenizer
 from operator import itemgetter
@@ -112,7 +110,7 @@ class SolutionGeneration:
     def generateSolutions(self, opts):
 
         ## Initialize the temp file
-        with open(opts.temp_file, "w") as f:
+        with open(os.path.join(opts.temp_folder, opts.temp_file), "w") as f:
             pass
 
         print(f"Starting the solution generation loop")
@@ -155,7 +153,7 @@ class SolutionGeneration:
             print(f"Throughput: {round(sum(total_completion_tokens)/total_duration, 2)}")   
 
             ## store the results to temp folder
-            with open(opts.temp_file, "a") as f:
+            with open(os.path.join(opts.temp_folder, opts.temp_file), "a") as f:
                 for i in range(len(chunk)):
                     for k in range(K):
                         sol_index = int(i*K + k)      
@@ -172,7 +170,7 @@ class SolutionGeneration:
 
         # df = pd.read_json(opts.temp_file, lines=True) 
         temp_data = []
-        with open(opts.temp_file, "r") as f:
+        with open(os.path.join(opts.temp_folder, opts.temp_file), "r") as f:
             for line in f:
                 record = json.loads(line.strip())
                 temp_data.append(record)
@@ -183,7 +181,10 @@ class SolutionGeneration:
                 f.write(json_string + "\n")
         print(f"Data saved..")
         print(f"!! -- Done -- !!")
-        return
+        
+        # check if the temp file exists and if it does, delete it
+        if os.path.exists(os.path.join(opts.temp_folder, opts.temp_file)):
+            os.remove(os.path.join(opts.temp_folder, opts.temp_file))
         
 
 
@@ -201,7 +202,8 @@ def getArguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=False, help="All arguments required should be in the config yaml config file")
     parser.add_argument("--input_file", required=False, help="Path to input dataset")
-    parser.add_argument("--temp_file", required=False, help="Path to temp file")
+    parser.add_argument("--temp_folder", required=False, default="temp",help="Path to temp folder")
+    parser.add_argument("--temp_file", required=False, default="temp_solution_generation.jsonl", help="Path to temp file")
     parser.add_argument("--model_name", type=str, default="openai/gpt-oss-120b", help="Model to be used for generation")
     parser.add_argument("--port", type=int, default=8080, help="Port to be used for the model endpoint")
     parser.add_argument("--batch_size", type=int, default=4096, help="Batch size to be processed in each iteration")

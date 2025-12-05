@@ -1,51 +1,42 @@
 import json
-import yaml
-import os
+import argparse
 import pandas as pd
 
-with open("configs/pipeline_config_may25.yaml", "r") as f:
-    config = yaml.safe_load(f)
 
-## global variables
-run_name_value = config["run_name"]
-input_file = config["traindata_prep"]["input_file"].format(run_name=run_name_value)
-data_budget = 8000
-seed = 41
-dataset = f"sand_math_{data_budget}_diffdesc" ## for saving purpose
+def main():
+    parser = argparse.ArgumentParser(description='Prepare training data from JSONL file')
+    parser.add_argument('--input_file', type=str, required=True,
+                        help='Path to input JSONL file')
+    parser.add_argument('--output_file', type=str, required=True,
+                        help='Path to output JSON file')
+    
+    args = parser.parse_args()
+    
+    ## read the data
+    df = pd.read_json(args.input_file, lines=True)
 
-## read the data
-df = pd.read_json(input_file, lines=True)
-# df = df.sample(frac=1, random_state=seed).reset_index(drop=True)
-df["sol_len"] = df["solution"].str.len()
-df = df.sort_values(by=["diff_rating", "sol_len"], ascending=[False, False])
-sample_df = df[:data_budget]
-sample_df = sample_df.sample(frac=1, random_state=seed).reset_index(drop=True)
+    training_data = []
+    for idx, row in df.iterrows():
+        if len(row["solution_1"].split(" ")) > 500:  # to remove very short solutions and potential incomplete solutions        
+            training_record = {
+                'instruction': row["question"],
+                'input': '',
+                'output': row["solution_1"],
+                'system': "Please reason step by step, and put your final answer within \\boxed{{}}."
+            }
+            training_data.append(training_record)
 
-training_data = []
-for idx , row in sample_df.iterrows():
-    if len(row["solution"].split("</think>")) == 2:
-        solution = row["solution"].split("</think>")[0].replace("<think>","").strip()
-        training_record = {
-            'instruction': row["problem"],
-            'input': '',
-            'output': solution,
-            'system': "Please reason step by step, and put your final answer within \\boxed{}."
-        }
-        training_data.append(training_record)
+    print(f"final training data count: {len(training_data)}")
 
-print(f"Training data budget: {data_budget}")
-print(f"final training data count: {len(training_data)}")
-print(f"Diff rating stats: \n mean: {sample_df['diff_rating'].mean()} \n min: {sample_df['diff_rating'].min()}\n max:{sample_df['diff_rating'].max()}")
+    ## writign into training datasets
+    with open(args.output_file, 'w') as f:
+        json.dump(training_data, f, indent=4)
 
-## writign into training datasets
-traindata_folder = os.path.join("data", run_name_value, "traindata")
-os.makedirs(traindata_folder, exist_ok=True)
-file = os.path.join(traindata_folder, f"{dataset}.json")
+    print(f"Training data written to {args.output_file}")
 
-with open(file, 'w') as f:
-    json.dump(training_data, f, indent=4)
 
-print(f"Dataset: {dataset}, written to {file}")
+if __name__ == "__main__":
+    main()
 
 
 
