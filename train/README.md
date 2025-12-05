@@ -434,9 +434,39 @@ huggingface-cli login
 > [!IMPORTANT]
 > Installation is mandatory.
 
+#### Docker Container Setup
+
+We recommend using the Docker container `rocm/pytorch-training:v25.6` as the base image and building on top of it:
+
+```bash
+docker run -it \
+  --ipc=host \
+  --network=host \
+  --device=/dev/kfd \
+  --device=/dev/dri \
+  --security-opt seccomp=unconfined \
+  --group-add video \
+  --shm-size 32G \
+  -w /workspace \
+  rocm/pytorch-training:v25.6
+```
+
+#### Install LLaMA-Factory
+
+You can either clone the latest LLaMA-Factory repository or use the code from this repo.
+
+**Option 1: Clone the latest LLaMA-Factory**
+
 ```bash
 git clone --depth 1 https://github.com/hiyouga/LLaMA-Factory.git
 cd LLaMA-Factory
+pip install -e ".[torch,metrics]"
+```
+
+**Option 2: Use the code from this repo**
+
+```bash
+cd train/
 pip install -e ".[torch,metrics]"
 ```
 
@@ -444,6 +474,29 @@ Extra dependencies available: torch, torch-npu, metrics, deepspeed, liger-kernel
 
 > [!TIP]
 > Use `pip install --no-deps -e .` to resolve package conflicts.
+
+#### Install DeepSpeed
+
+```bash
+pip install deepspeed==0.16.9
+```
+
+#### Environment Variables Setup
+
+Set up the required environment variables:
+
+```bash
+export HF_TOKEN="your_huggingface_token_here"
+export WANDB_API_KEY="your_wandb_api_key_here"
+```
+
+Alternatively, you can add these to your `~/.bashrc` or `~/.profile` for persistence:
+
+```bash
+echo 'export HF_TOKEN="your_huggingface_token_here"' >> ~/.bashrc
+echo 'export WANDB_API_KEY="your_wandb_api_key_here"' >> ~/.bashrc
+source ~/.bashrc
+```
 
 <details><summary>Setting up a virtual environment with <b>uv</b></summary>
 
@@ -574,123 +627,6 @@ See [examples/README.md](examples/README.md) for advanced usage (including distr
 llamafactory-cli webui
 ```
 
-### Build Docker
-
-For CUDA users:
-
-```bash
-cd docker/docker-cuda/
-docker compose up -d
-docker compose exec llamafactory bash
-```
-
-For Ascend NPU users:
-
-```bash
-cd docker/docker-npu/
-docker compose up -d
-docker compose exec llamafactory bash
-```
-
-For AMD ROCm users:
-
-```bash
-cd docker/docker-rocm/
-docker compose up -d
-docker compose exec llamafactory bash
-```
-
-<details><summary>Build without Docker Compose</summary>
-
-For CUDA users:
-
-```bash
-docker build -f ./docker/docker-cuda/Dockerfile \
-    --build-arg INSTALL_BNB=false \
-    --build-arg INSTALL_VLLM=false \
-    --build-arg INSTALL_DEEPSPEED=false \
-    --build-arg INSTALL_FLASHATTN=false \
-    --build-arg PIP_INDEX=https://pypi.org/simple \
-    -t llamafactory:latest .
-
-docker run -dit --gpus=all \
-    -v ./hf_cache:/root/.cache/huggingface \
-    -v ./ms_cache:/root/.cache/modelscope \
-    -v ./om_cache:/root/.cache/openmind \
-    -v ./data:/app/data \
-    -v ./output:/app/output \
-    -p 7860:7860 \
-    -p 8000:8000 \
-    --shm-size 16G \
-    --name llamafactory \
-    llamafactory:latest
-
-docker exec -it llamafactory bash
-```
-
-For Ascend NPU users:
-
-```bash
-# Choose docker image upon your environment
-docker build -f ./docker/docker-npu/Dockerfile \
-    --build-arg INSTALL_DEEPSPEED=false \
-    --build-arg PIP_INDEX=https://pypi.org/simple \
-    -t llamafactory:latest .
-
-# Change `device` upon your resources
-docker run -dit \
-    -v ./hf_cache:/root/.cache/huggingface \
-    -v ./ms_cache:/root/.cache/modelscope \
-    -v ./om_cache:/root/.cache/openmind \
-    -v ./data:/app/data \
-    -v ./output:/app/output \
-    -v /usr/local/dcmi:/usr/local/dcmi \
-    -v /usr/local/bin/npu-smi:/usr/local/bin/npu-smi \
-    -v /usr/local/Ascend/driver:/usr/local/Ascend/driver \
-    -v /etc/ascend_install.info:/etc/ascend_install.info \
-    -p 7860:7860 \
-    -p 8000:8000 \
-    --device /dev/davinci0 \
-    --device /dev/davinci_manager \
-    --device /dev/devmm_svm \
-    --device /dev/hisi_hdc \
-    --shm-size 16G \
-    --name llamafactory \
-    llamafactory:latest
-
-docker exec -it llamafactory bash
-```
-
-For AMD ROCm users:
-
-```bash
-docker build -f ./docker/docker-rocm/Dockerfile \
-    --build-arg INSTALL_BNB=false \
-    --build-arg INSTALL_VLLM=false \
-    --build-arg INSTALL_DEEPSPEED=false \
-    --build-arg INSTALL_FLASHATTN=false \
-    --build-arg PIP_INDEX=https://pypi.org/simple \
-    -t llamafactory:latest .
-
-docker run -dit \
-    -v ./hf_cache:/root/.cache/huggingface \
-    -v ./ms_cache:/root/.cache/modelscope \
-    -v ./om_cache:/root/.cache/openmind \
-    -v ./data:/app/data \
-    -v ./output:/app/output \
-    -v ./saves:/app/saves \
-    -p 7860:7860 \
-    -p 8000:8000 \
-    --device /dev/kfd \
-    --device /dev/dri \
-    --shm-size 16G \
-    --name llamafactory \
-    llamafactory:latest
-
-docker exec -it llamafactory bash
-```
-
-</details>
 
 <details><summary>Details about volume</summary>
 
