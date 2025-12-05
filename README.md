@@ -312,4 +312,4 @@ This project is licensed under the **Open RAIL-MSD** license. This is an open, r
 
 The license includes standard use-based restrictions to prevent harmful applications (e.g., illegal activities, generating harmful content, high-risk applications). These restrictions are designed to promote responsible AI development while keeping the license permissive for legitimate use cases.
 
-For full license terms and conditions, please see the [LICENSE](LICENSE) file.
+For full license terms and conditions, please see the [LICENSE](https://github.com/AMD-AGI/sand-pipeline/blob/main/LICENSE.txt) file.
