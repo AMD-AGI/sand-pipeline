@@ -42,7 +42,7 @@ We are releasing our curated dataset and two best-performing models trained usin
 The core contribution of this work is a 4-stage automated pipeline that prioritizes **quality over quantity**. Unlike datasets that recycle easy problems, our pipeline leverages a Teacher Model (`GPT-OSS120b`) to generate, validate, and systematically "hike" the difficulty of reasoning problems.
 
 <div align="center">
-  <img src="figures/SAND-Pipeline-gc.png" alt="Synthetic Data Pipeline Architecture" width="800"/>
+  <img src="figures/SAND-MATH-ROCM-Blog.png" alt="Synthetic Data Pipeline Architecture" width="800"/>
 </div>
 
 ### Pipeline Stages
