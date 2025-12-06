@@ -7,7 +7,36 @@ This repository contains scripts for evaluating Large Language Models (LLMs) on 
 
 ## Environment Setup
 
-When setting up the environment, pay attention to package version numbers, especially for those with specific version requirements noted in the documentation.
+We recommend using our prebuilt Docker image `rocm/vllm-dev:main`.
+
+### Step 1: Clone the Repository
+
+First, clone the repository on your host machine:
+
+```bash
+git clone https://github.com/AMD-AGI/sand-pipeline.git
+cd sand-pipeline/eval
+```
+
+### Step 2: Run Docker Container
+
+Run the Docker container
+
+```bash
+docker run -it \
+  --ipc=host \
+  --network=host \
+  --device=/dev/kfd \
+  --device=/dev/dri \
+  --security-opt seccomp=unconfined \
+  --group-add video \
+  --shm-size 32G \
+  rocm/vllm-dev:main
+```
+
+### Step 3: Install Required Packages
+
+Inside the Docker container, install the required packages:
 
 ```bash
 pip install -r requirements.txt
@@ -77,13 +106,13 @@ The evaluation utilities handle various answer formats:
 
 ### Running Evaluation
 
-Execute the evaluation script using:
+To reproduce our evaluations, run the script:
 
 ```bash
-bash eval.sh
+bash parallel_launcher.sh "/path/to/model/weights" "log_directory_to_save"
 ```
 
-Parameters in `eval.sh`:
+Parameters in `parallel_launcher.sh`:
 
 ```bash
 CUDA_VISIBLE_DEVICES='0,1,2,3' \
