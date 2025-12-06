@@ -1,5 +1,5 @@
 ### model
-model_name_or_path: deepseek-ai/DeepSeek-R1-Distill-Qwen-14B
+model_name_or_path: Qwen/Qwen2.5-32B-Instruct
 trust_remote_code: True
 ### method
 stage: sft
@@ -9,14 +9,14 @@ deepspeed: examples/deepspeed/ds_z3_config.json
 flash_attn: fa2
 
 ### dataset
-dataset: gptoss14k,math_2k,science_3k
-cutoff_len: 32768 #16384
+dataset: sandmath
+cutoff_len: 32768
 overwrite_cache: true
 preprocessing_num_workers: 64
 template: qwen
 
 ### output
-output_dir: /wekafs/machaita/LLaMA-Factory/saves/sand_math_gptoss14k_science/DeepSeek-R1-Distill-Qwen-14B
+output_dir: saves/sand_math/Qwen2.5-32B-Instruct
 logging_steps: 1
 save_strategy: epoch
 # save_steps: 0.5
@@ -25,7 +25,7 @@ overwrite_output_dir: true
 
 ##logging
 report_to: wandb
-run_name: gptoss14k_science_ds14b
+run_name: sand_math
 
 ### train
 per_device_train_batch_size: 2

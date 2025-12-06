@@ -5,7 +5,7 @@
 [![Paper](https://img.shields.io/badge/ArXiv-2507.20527-B31B1B.svg)](https://arxiv.org/pdf/2507.20527)
 [![Hugging Face Models](https://img.shields.io/badge/🤗%20Hugging%20Face-Models-yellow)](https://huggingface.co/collections/amd/sand)
 [![Hugging Face Dataset](https://img.shields.io/badge/🤗%20Hugging%20Face-Dataset-green)](https://huggingface.co/datasets/amd/SAND-Post-Training-Dataset)
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Blog Post](https://img.shields.io/badge/Blog%20Post-Read%20More-blue)](https://rocm.blogs.amd.com/artificial-intelligence/sand-math/README.html)
 
 </div>
 
@@ -31,9 +31,9 @@ We are releasing our curated dataset and two best-performing models trained usin
 
 | Type | Name | Description | Link |
 | :--- | :--- | :--- | :--- |
-| **Model** | **SAND-Math-Qwen2.5-32B** | SOTA Math reasoner trained on 14k synthetic samples. | [🤗 HuggingFace](https://huggingface.co/amd/SAND-Math-Qwen2.5-32B) |
-| **Model** | **SAND-MathScience-DS32B** | Math & Science reasoner matching Qwen3 performance. | [🤗 HuggingFace](https://huggingface.co/amd/SAND-MathScience-DeepSeek-Qwen32B) |
-| **Dataset** | **SAND-Reasoning-27k** | 15k Math & 12k Science high-difficulty synthetic problems. | [🤗 HuggingFace](https://huggingface.co/datasets/amd/SAND-Post-Training-Dataset) |
+| **Model** | **SAND-Math-Qwen2.5-32B** | SOTA Math reasoning model trained on 14k synthetic samples. | [🤗 HuggingFace](https://huggingface.co/amd/SAND-Math-Qwen2.5-32B) |
+| **Model** | **SAND-MathScience-DeepSeek-Qwen32B** | Math & Science reasoning model surpassing Qwen3 performance. | [🤗 HuggingFace](https://huggingface.co/amd/SAND-MathScience-DeepSeek-Qwen32B) |
+| **Dataset** | **SAND-Post-Training-Dataset** | 15k Math & 12k Science high-difficulty synthetic problems. | [🤗 HuggingFace](https://huggingface.co/datasets/amd/SAND-Post-Training-Dataset) |
 
 ---
 
@@ -42,7 +42,7 @@ We are releasing our curated dataset and two best-performing models trained usin
 The core contribution of this work is a 4-stage automated pipeline that prioritizes **quality over quantity**. Unlike datasets that recycle easy problems, our pipeline leverages a Teacher Model (`GPT-OSS120b`) to generate, validate, and systematically "hike" the difficulty of reasoning problems.
 
 <div align="center">
-  <img src="figures/PipelineSimple.png" alt="Synthetic Data Pipeline Architecture" width="800"/>
+  <img src="figures/SAND-Pipeline-gc.png" alt="Synthetic Data Pipeline Architecture" width="800"/>
 </div>
 
 ### Pipeline Stages
@@ -82,7 +82,7 @@ Using only **14k synthetic math samples** and standard SFT (no RL), we achieved 
 
 ### Experiment 2: Bridging the Generational Gap
 
-We fine-tuned `DeepSeek-R1-Distill-Qwen-32B` (based on the previous-generation `Qwen2.5-32B`) on a mixed dataset of **14k Math + 12k Science**. The result is a model that rivals the next-generation **Qwen3-32B**.
+We fine-tuned `DeepSeek-R1-Distill-Qwen-32B` (based on the previous-generation `Qwen2.5-32B`) on a mixed dataset of **14k Math + 1k math difficuty hiked + 12k Science**. The result is a model that rivals the next-generation **Qwen3-32B**.
 
 | Model | Data Size | AIME24 | AIME25 | MATH500 | GPQA |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -122,8 +122,8 @@ docker run -it \
 Clone the repository:
 
 ```bash
-git clone https://github.com/your-username/repo_name.git
-cd repo_name/pipeline
+git clone https://github.com/AMD-AGI/sand-pipeline.git
+cd sand-pipeline/pipeline
 ```
 
 Install required packages:
@@ -225,7 +225,7 @@ Format the final cleaned dataset for the training framework:
 ```bash
 python train_data_prep.py \
     --input_file data/consistent_dc_dd_math.jsonl \
-    --output_file ../train/data/sand_math.json
+    --output_file ../train/data/sandmath.json
 ```
 
 ### Optional: Difficulty Enhancement
@@ -283,17 +283,25 @@ We use LLaMA-Factory for efficient fine-tuning on AMD hardware.
 
 #### 1. Register the Dataset
 
-If not already there, copy your final processed data to the training folder and register it:
+**Option A: Use Your Own Data**
 
-```bash
-cp final_formatted.jsonl train/data/
-```
+Save your processed data files in the `train/data/` directory. Ensure your dataset follows LLaMA-Factory's [data preparation guidelines](https://github.com/hiyouga/LLaMA-Factory/tree/main/data) (typically JSON or JSONL format with appropriate fields).
 
-Open `train/data/dataset_info.json` and add an entry for your new file.
+**Option B: Use Our Pre-processed Dataset**
+
+Alternatively, you can download our curated dataset from [amd/SAND-Post-Training-Dataset](https://huggingface.co/datasets/amd/SAND-Post-Training-Dataset) on Hugging Face. After downloading, save the files to the `train/data/` directory.
+
+**Register the Dataset**
+
+Once your data files are in place, open `train/data/dataset_info.json` and add an entry for your new dataset. Note that entries for `sandmath`, `sandmath_dh`, and `sandscience` already exist in the file and can serve as reference examples.
 
 #### 2. Create Configuration
 
-Create a YAML configuration file in `train/examples/train_full/` (e.g., `qwen_finetune.yaml`). Define your model path, learning rate, and dataset name there.
+Create a YAML configuration file in `train/examples/train_full/` (e.g., `train_sand_math.yaml`). Define your model path, learning rate, and dataset name there.
+
+As examples, our training configuration files already exist:
+- `train_sand_math_qwen_2_5_32b.yaml` - Training configuration for Qwen2.5 based model using math dataset
+- `train_sand_math&science_ds32b.yaml` - Training configuration for DeepSeek based model using math and science dataset
 
 #### 3. Launch Training
 
@@ -301,8 +309,10 @@ Run the training job using the LLaMA-Factory CLI:
 
 ```bash
 cd train
-llamafactory-cli train examples/train_full/qwen_finetune.yaml
+llamafactory-cli train examples/train_full/train_sand_math_qwen_2_5_32b.yaml
 ```
+
+Replace `train_sand_math_qwen_2_5_32b.yaml` with your desired configuration file.
 
 ---
 
@@ -312,7 +322,7 @@ This project is licensed under the **Open RAIL-MSD** license. This is an open, r
 
 The license includes standard use-based restrictions to prevent harmful applications (e.g., illegal activities, generating harmful content, high-risk applications). These restrictions are designed to promote responsible AI development while keeping the license permissive for legitimate use cases.
 
-For full license terms and conditions, please see the [LICENSE](https://github.com/AMD-AGI/sand-pipeline/blob/main/LICENSE.txt) file.
+For full license terms and conditions, please see the [LICENSE](./LICENSE) file.
 
 ## Citation
 
