@@ -3,8 +3,8 @@
 <div align="center">
 
 [![Paper](https://img.shields.io/badge/ArXiv-2507.20527-B31B1B.svg)](https://arxiv.org/pdf/2507.20527)
-[![Hugging Face Models](https://img.shields.io/badge/🤗%20Hugging%20Face-Models-yellow)](https://huggingface.co/your-org)
-[![Hugging Face Dataset](https://img.shields.io/badge/🤗%20Hugging%20Face-Dataset-green)](https://huggingface.co/datasets/your-org)
+[![Hugging Face Models](https://img.shields.io/badge/🤗%20Hugging%20Face-Models-yellow)](https://huggingface.co/collections/amd/sand)
+[![Hugging Face Dataset](https://img.shields.io/badge/🤗%20Hugging%20Face-Dataset-green)](https://huggingface.co/datasets/amd/SAND-Post-Training-Dataset)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 </div>
@@ -31,9 +31,9 @@ We are releasing our curated dataset and two best-performing models trained usin
 
 | Type | Name | Description | Link |
 | :--- | :--- | :--- | :--- |
-| **Model** | **SAND-Math-Qwen2.5-32B** | SOTA Math reasoner trained on 14k synthetic samples. | [🤗 HuggingFace](https://huggingface.co/your-org/SAND-Math-Qwen2.5-32B) |
-| **Model** | **SAND-MathScience-DS32B** | Math & Science reasoner matching Qwen3 performance. | [🤗 HuggingFace](https://huggingface.co/your-org/SAND-MathScience-DS32B) |
-| **Dataset** | **SAND-Reasoning-26k** | 14k Math & 12k Science high-difficulty synthetic problems. | [🤗 HuggingFace](https://huggingface.co/datasets/your-org/SAND-Reasoning-26k) |
+| **Model** | **SAND-Math-Qwen2.5-32B** | SOTA Math reasoner trained on 14k synthetic samples. | [🤗 HuggingFace](https://huggingface.co/amd/SAND-Math-Qwen2.5-32B) |
+| **Model** | **SAND-MathScience-DS32B** | Math & Science reasoner matching Qwen3 performance. | [🤗 HuggingFace](https://huggingface.co/amd/SAND-MathScience-DeepSeek-Qwen32B) |
+| **Dataset** | **SAND-Reasoning-27k** | 15k Math & 12k Science high-difficulty synthetic problems. | [🤗 HuggingFace](https://huggingface.co/datasets/amd/SAND-Post-Training-Dataset) |
 
 ---
 
@@ -88,7 +88,7 @@ We fine-tuned `DeepSeek-R1-Distill-Qwen-32B` (based on the previous-generation `
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | EXAONE Deep 32B | - | 72.1 | 65.8 | 95.8 | 66.1 |
 | Qwen3-32B (Thinking mode) | - | 81.4 | 72.9 | **97.0** | 68.4 |
-| **SAND-MathScience-DS32B (Ours)** | **27k** | **83.85** | **78.33** | 93.85 | **68.72** |
+| **SAND-MathScience-DeepSeek-Qwen32B (Ours)** | **27k** | **83.85** | **78.33** | 93.85 | **68.72** |
 
 > **Note:** Our approach proves that targeted, high-difficulty synthetic data can elevate prior-generation models to match modern proprietary systems efficiently.
 
