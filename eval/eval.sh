@@ -1,7 +1,4 @@
 
-# MODEL_PATH="/dockerx/mnt/m2m_nobackup/machaita/saves/limo_sand_math_500_diffdesc/Qwen2.5-32B-Instruct" 
-# OUTPUT_DIR="${MODEL_PATH}/eval/outputs"
-# COMPLETIONS_DIR="${MODEL_PATH}/eval/completions"
 
 MODEL_PATH=$1
 OUTPUT_DIR=$2
