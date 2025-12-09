@@ -277,7 +277,7 @@ python solution_generation.py \
 
 ### Training
 
-We use LLaMA-Factory for efficient fine-tuning on AMD hardware.
+We leveraged **LLaMA-Factory** to facilitate efficient fine-tuning on AMD hardware. Our distributed training infrastructure consisted of **8x AMD Instinct<sup>TM</sup> MI300X** accelerators, optimized using **DeepSpeed ZeRO-3**. Comprehensive training configurations—spanning hyperparameters, optimizer settings, and DeepSpeed specifications—are documented in the `train/examples/train_full/` directory.
 
 > **Note:** Setup instructions for training are provided in the `train/` folder. Please follow those instructions for detailed training setup.
 
