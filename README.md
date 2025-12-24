@@ -1,4 +1,4 @@
-# 🚀 Scalable Synthetic Data Pipeline for SOTA Reasoning Model
+# 🚀 SAND: Scalable Synthetic Data Pipeline for SOTA Reasoning Model
 
 <div align="center">
 
